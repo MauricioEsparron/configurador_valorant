@@ -8,13 +8,26 @@ import sys
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
+def resource_path(relative_path):
+    """ Obtiene la ruta absoluta del recurso, funciona para dev y para PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 class ValorantConfigApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("520x750")
+        self.geometry("520x820") # Recuerda usar 820 para que se vea tu firma abajo
         self.resizable(False, False)
+        
+        # USA LA FUNCIÓN AQUÍ:
+        icon_path = resource_path("gato.ico")
+        if os.path.exists(icon_path):
+            self.wm_iconbitmap(icon_path)
 
         self.idiomas = {
             "ES": {
