@@ -1,5 +1,15 @@
 import os
 import re
+import sys
+
+# Clase para manejar colores en la consola
+class Color:
+    VERDE = '\033[92m'
+    AMARILLO = '\033[93m'
+    ROJO = '\033[91m'
+    CIAN = '\033[96m'
+    BOLD = '\033[1m'
+    RESET = '\033[0m'
 
 def obtener_ruta_activa():
     local_appdata = os.environ.get('LOCALAPPDATA')
@@ -29,33 +39,49 @@ def obtener_ruta_activa():
             if id_query in carpeta_limpia:
                 ruta_final = os.path.join(base_config_path, carpeta, 'WindowsClient', 'GameUserSettings.ini')
                 if os.path.exists(ruta_final):
-                    print(f"Cuenta activa detectada: {carpeta}")
+                    print(f"{Color.VERDE} Cuenta activa detectada:{Color.RESET} {Color.CIAN}{carpeta}{Color.RESET}")
                     return ruta_final
     return None
 
+def mostrar_menu_resoluciones():
+    print(f"\n{Color.BOLD} LISTA DE RESOLUCIONES 4:3 RECOMENDADAS{Color.RESET}")
+    print("-" * 65)
+    print(f"{Color.CIAN}{'ANCHO (X)':<12} | {'ALTO (Y)':<10}{Color.RESET} | {'CALIDAD / USO'}")
+    print("-" * 65)
+    print(f"{'1920':<12} x {'1440':<10} | Alta / 2K")
+    print(f"{'1600':<12} x {'1200':<10} | Alta / Estándar")
+    print(f"{'1440':<12} x {'1080':<10} | Ideal para monitores 1080p")
+    print(f"{'1280':<12} x {'960':<10} | Equilibrada / Popular")
+    print(f"{'1152':<12} x {'864':<10} | Calidad Media")
+    print(f"{'1024':<12} x {'768':<10} | Baja / Rendimiento FPS")
+    print(f"{'800':<12} x {'600':<10} | Extrema / PC de bajos recursos")
+    print(f"{'640':<12} x {'480':<10} | Mínima")
+    print("-" * 65)
+    print(f"{Color.AMARILLO}💡 Presiona Ctrl + C en cualquier momento para cancelar.{Color.RESET}\n")
+
 def modificar_archivo():
-    
+    # Habilitar colores en consolas de Windows antiguas
     os.system('') 
     
     try:
-        print(f"{'='*65}")
-        print(f"VALORANT STRETCHED RESOLUTION CONFIGURATOR (4:3)")
-        print(f"{'='*65}")
+        print(f"{Color.CIAN}{'='*65}{Color.RESET}")
+        print(f"{Color.BOLD}      VALORANT STRETCHED RESOLUTION CONFIGURATOR (4:3){Color.RESET}")
+        print(f"{Color.CIAN}{'='*65}{Color.RESET}")
         
         ruta_archivo = obtener_ruta_activa()
         
         if not ruta_archivo:
-            print(f"\n❌ Error: No se encontró la ruta de configuración activa.")
+            print(f"\n{Color.ROJO}❌ Error: No se encontró la ruta de configuración activa.{Color.RESET}")
             input("\nPresiona Enter para salir...")
             return
 
         mostrar_menu_resoluciones()
 
-        x = input(f"👉 Ingresa el ANCHO (X): ").strip()
-        y = input(f"👉 Ingresa el ALTO (Y):  ").strip()
+        x = input(f"{Color.BOLD}👉 Ingresa el ANCHO (X): {Color.RESET}").strip()
+        y = input(f"{Color.BOLD}👉 Ingresa el ALTO (Y):  {Color.RESET}").strip()
 
         if not x.isdigit() or not y.isdigit():
-            print(f"\n ❌ Error: ¡Debes ingresar solo números!")
+            print(f"\n{Color.ROJO}❌ Error: ¡Debes ingresar solo números!{Color.RESET}")
             input("Presiona Enter para reintentar...")
             return
 
@@ -93,12 +119,12 @@ def modificar_archivo():
         with open(ruta_archivo, 'w', encoding='utf-8') as f:
             f.write(contenido)
         
-        print(f"\n ¡Éxito! Archivo actualizado a {x}x{y}.")
-        print(f"💡 IMPORTANTE: Verifica la escala en el panel de NVIDIA/AMD.")
+        print(f"\n{Color.VERDE}🚀 ¡Éxito! Archivo actualizado a {x}x{y}.{Color.RESET}")
+        print(f"{Color.AMARILLO}💡 IMPORTANTE: Verifica la escala en el panel de NVIDIA/AMD.{Color.RESET}")
         input("\nPresiona Enter para finalizar...")
 
     except KeyboardInterrupt:
-        print(f"\n\n⚠️ Operación cancelada con éxito por el usuario.")
+        print(f"\n\n{Color.ROJO}⚠️ Operación cancelada con éxito por el usuario.{Color.RESET}")
         sys.exit()
 
 if __name__ == "__main__":
