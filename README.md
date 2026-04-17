@@ -2,7 +2,16 @@
 
 Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores de VALORANT que buscan optimizar su ventaja competitiva utilizando resoluciones estiradas (4:3) sin complicaciones técnicas.
 
-![Interfaz del Programa](https://tu-enlace-a-una-imagen.com) <!-- Opcional: Sube tu captura a GitHub y pon el link aquí -->
+## 📸 Capturas de Pantalla
+
+| Selección de Idioma | Interfaz Principal |
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/f7f66891-7117-428d-a197-e9effcb390eb" width="280"> | <img src="https://github.com/user-attachments/assets/d441873e-83a9-4521-aa0a-c865c05ba481" width="280"> |
+
+| Selección de Resolución | Éxito al Aplicar |
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/4bc568ce-37d8-4199-a9ce-51e3d7286073" width="280"> | <img src="https://github.com/user-attachments/assets/e484987c-ad8e-4485-b575-09f3d86e5101" width="280"> |
+
 
 ## ✨ Características Principales
 *   **Detección Inteligente de Cuenta:** Localiza automáticamente la carpeta de configuración de tu última cuenta activa (soporte para múltiples regiones: LATAM, BR, NA, etc.).
@@ -14,7 +23,7 @@ Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores
 
 ## 🚀 Cómo usar
 1.  **Cierra VALORANT** por completo.
-2.  Descarga el ejecutable desde la sección de [Releases](https://github.com).
+2.  Descarga el ejecutable desde la sección de [Releases](https://github.com/MauricioEsparron/configurador_valorant/releases).
 3.  Ejecuta el programa como **Administrador**.
 4.  Selecciona tu resolución o ingresa una personalizada.
 5.  Haz clic en **APLICAR CONFIGURACIÓN**.
