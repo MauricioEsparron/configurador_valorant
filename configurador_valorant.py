@@ -1,199 +1,236 @@
 import os
 import re
+import webbrowser
+import customtkinter as ctk
+from tkinter import messagebox
 import sys
-import msvcrt
 
-# Clase para manejar colores
-class Color:
-    VERDE = '\033[92m'
-    AMARILLO = '\033[93m'
-    ROJO = '\033[91m'
-    CIAN = '\033[96m'
-    BOLD = '\033[1m'
-    RESET = '\033[0m'
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
 
-def seleccionar_idioma():
-    """Menú interactivo con flechas de arriba/abajo"""
-    os.system('') 
-    opciones = ["English", "Español"]
-    seleccion = 0
-    
-    while True:
-        os.system('cls')
-        print(f"{Color.CIAN}Select Language / Selecciona Idioma:{Color.RESET}")
-        print(f"{Color.AMARILLO}(Use ↑/↓ arrows and press ENTER / Usa flechas ↑/↓ y presiona ENTER){Color.RESET}\n")
-        
-        for i, opcion in enumerate(opciones):
-            if i == seleccion:
-                print(f"{Color.VERDE} > {Color.BOLD}{opcion}{Color.RESET}")
-            else:
-                print(f"   {opcion}")
-        
-        key = msvcrt.getch()
-        if key == b'\r': 
-            break
-        elif key == b'\xe0': 
-            key = msvcrt.getch()
-            if key == b'H': # Arriba
-                seleccion = (seleccion - 1) % len(opciones)
-            elif key == b'P': # Abajo
-                seleccion = (seleccion + 1) % len(opciones)
+class ValorantConfigApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-    if seleccion == 1: # Español
-        return {
-            "titulo": "VALORANT STRETCHED RESOLUTION CONFIGURATOR (4:3)",
-            "cuenta_ok": "✅ Cuenta activa detectada:",
-            "err_ruta": "❌ Error: No se encontró la ruta de configuración activa.",
-            "menu_tit": "📌 LISTA DE RESOLUCIONES 4:3 RECOMENDADAS",
-            "col_x": "ANCHO (X)",
-            "col_y": "ALTO (Y)",
-            "col_uso": "CALIDAD / USO",
-            "res_alta_2k": "Alta / 2K",
-            "res_alta_std": "Alta / Estándar",
-            "res_ideal": "Ideal para monitores 1080p",
-            "res_popular": "Equilibrada / Popular",
-            "res_media": "Calidad Media",
-            "res_baja": "Baja / Rendimiento FPS",
-            "res_extrema": "Extrema / PC de bajos recursos",
-            "res_minima": "Mínima",
-            "ctrl_c": "💡 Presiona Ctrl + C en cualquier momento para cancelar.",
-            "input_x": "👉 Ingresa el ANCHO (X) deseado: ",
-            "input_y": "👉 Ingresa el ALTO (Y) deseado:  ",
-            "err_num": "❌ Error: ¡Debes ingresar solo números!",
-            "exito": "🚀 ¡Éxito! Archivo actualizado sin duplicados.",
-            "importante": "💡 IMPORTANTE: Verifica la escala en el panel de NVIDIA/AMD.",
-            "cancelado": "⚠️ Operación cancelada con éxito.",
-            "finalizar": "Presiona Enter para finalizar..."
-        }
-    else: # English
-        return {
-            "titulo": "VALORANT STRETCHED RESOLUTION CONFIGURATOR (4:3)",
-            "cuenta_ok": "✅ Active account detected:",
-            "err_ruta": "❌ Error: Active configuration path not found.",
-            "menu_tit": "📌 RECOMMENDED 4:3 RESOLUTIONS LIST",
-            "col_x": "WIDTH (X)",
-            "col_y": "HEIGHT (Y)",
-            "col_uso": "QUALITY / USAGE",
-            "res_alta_2k": "High / 2K",
-            "res_alta_std": "High / Standard",
-            "res_ideal": "Ideal for 1080p monitors",
-            "res_popular": "Balanced / Popular",
-            "res_media": "Medium Quality",
-            "res_baja": "Low / FPS Performance",
-            "res_extrema": "Extreme / Low-end PC",
-            "res_minima": "Minimum",
-            "ctrl_c": "💡 Press Ctrl + C at any time to cancel.",
-            "input_x": "👉 Enter desired WIDTH (X): ",
-            "input_y": "👉 Enter desired HEIGHT (Y): ",
-            "err_num": "❌ Error: You must enter numbers only!",
-            "exito": "🚀 Success! File updated without duplicates.",
-            "importante": "💡 IMPORTANT: Check scaling in NVIDIA/AMD panel.",
-            "cancelado": "⚠️ Operation successfully cancelled.",
-            "finalizar": "Press Enter to finish..."
+        self.title("VALORANT Stretched Res Configurator")
+        self.geometry("520x750")
+        self.resizable(False, False)
+
+        self.idiomas = {
+            "ES": {
+                "titulo": "VALORANT 4:3 CONFIG",
+                "cuenta_ok": "✅ Cuenta detectada:",
+                "cuenta_no": "❌ No se detectó cuenta activa",
+                "res_perso": "Resolución Personalizada",
+                "ancho": "Ancho (X)",
+                "alto": "Alto (Y)",
+                "sugeridas": "Resoluciones sugeridas:",
+                "btn_aplicar": "APLICAR CONFIGURACIÓN",
+                "footer": "Cierra el juego antes de aplicar los cambios",
+                "donar": "Apoyar el proyecto ☕",
+                "repo": "Ver Código en GitHub 📂",
+                "combo_init": "Seleccionar resolución...",
+                "exito": "¡Configuración aplicada!\nResolución: {}x{}\n\nRecuerda ajustar la escala en tu panel de video.",
+                "opciones": [
+                    "1920x1440 (Alta / 2K)", "1600x1200 (Alta / Estándar)", "1440x1080 (Ideal para monitores 1080p)",
+                    "1280x960 (Equilibrada / Popular)", "1152x864 (Calidad Media)", "1024x768 (Baja / +Rendimiento FPS)",
+                    "800x600 (Extrema / PC de bajos recursos)", "640x480 (Mínima)"
+                ]
+            },
+            "EN": {
+                "titulo": "VALORANT 4:3 CONFIG",
+                "cuenta_ok": "✅ Account detected:",
+                "cuenta_no": "❌ No active account detected",
+                "res_perso": "Custom Resolution",
+                "ancho": "Width (X)",
+                "alto": "Height (Y)",
+                "sugeridas": "Suggested resolutions:",
+                "btn_aplicar": "APPLY CONFIGURATION",
+                "footer": "Close the game before applying changes",
+                "donar": "Support the project ☕",
+                "repo": "View Code on GitHub 📂",
+                "combo_init": "Select resolution...",
+                "exito": "Configuration applied!\nResolution: {}x{}\n\nRemember to adjust scaling in your video panel.",
+                "opciones": [
+                    "1920x1440 (High / 2K)", "1600x1200 (High / Standard)", "1440x1080 (Ideal for 1080p monitors)",
+                    "1280x960 (Balanced / Popular)", "1152x864 (Medium Quality)", "1024x768 (Low / +FPS Performance)",
+                    "800x600 (Extreme / Low-end PC)", "640x480 (Minimum)"
+                ]
+            }
         }
 
-TXT = {}
+        self.lang = "ES"
+        self.ruta_ini = self.obtener_ruta_activa()
+        self.setup_ui()
 
-def obtener_ruta_activa():
-    local_appdata = os.environ.get('LOCALAPPDATA')
-    ruta_riot_local = os.path.join(local_appdata, 'VALORANT', 'Saved', 'Config', 'WindowsClient', 'RiotLocalMachine.ini')
-    if not os.path.exists(ruta_riot_local): return None
-    last_user_id = None
-    for enc in ['utf-16', 'utf-8-sig', 'utf-8']:
+    def abrir_url(self, url):
+        webbrowser.open_new_tab(url)
+
+    def obtener_ruta_activa(self):
         try:
-            with open(ruta_riot_local, 'r', encoding=enc) as f:
-                match = re.search(r'LastKnownUser=(.*)', f.read())
-                if match:
-                    last_user_id = match.group(1).strip()
-                    break
-        except: continue
-    if not last_user_id: return None
-    id_query = re.sub(r'[^a-zA-Z0-9]', '', last_user_id).lower()
-    base_config_path = os.path.join(local_appdata, 'VALORANT', 'Saved', 'Config')
-    if os.path.exists(base_config_path):
-        for carpeta in os.listdir(base_config_path):
-            carpeta_limpia = re.sub(r'[^a-zA-Z0-9]', '', carpeta).lower()
-            if id_query in carpeta_limpia:
-                ruta_final = os.path.join(base_config_path, carpeta, 'WindowsClient', 'GameUserSettings.ini')
-                if os.path.exists(ruta_final):
-                    print(f"{Color.VERDE}{TXT['cuenta_ok']}{Color.RESET} {Color.CIAN}{carpeta}{Color.RESET}")
-                    return ruta_final
-    return None
+            local_appdata = os.environ.get('LOCALAPPDATA')
+            ruta_riot = os.path.join(local_appdata, 'VALORANT', 'Saved', 'Config', 'WindowsClient', 'RiotLocalMachine.ini')
+            if not os.path.exists(ruta_riot): return None
 
-def mostrar_menu_resoluciones():
-    print(f"\n{Color.BOLD} {TXT['menu_tit']}{Color.RESET}")
-    print("-" * 75)
-    print(f"{Color.CIAN}{TXT['col_x']:<12} | {TXT['col_y']:<10}{Color.RESET} | {TXT['col_uso']}")
-    print("-" * 75)
-    print(f"{'1920':<12} x {'1440':<10} | {TXT['res_alta_2k']}")
-    print(f"{'1600':<12} x {'1200':<10} | {TXT['res_alta_std']}")
-    print(f"{'1440':<12} x {'1080':<10} | {Color.VERDE}{TXT['res_ideal']}{Color.RESET}")
-    print(f"{'1280':<12} x {'960':<10} | {Color.AMARILLO}{TXT['res_popular']}{Color.RESET}")
-    print(f"{'1152':<12} x {'864':<10} | {TXT['res_media']}")
-    print(f"{'1024':<12} x {'768':<10} | {TXT['res_baja']}")
-    print(f"{'800':<12} x {'600':<10} | {TXT['res_extrema']}")
-    print(f"{'640':<12} x {'480':<10} | {TXT['res_minima']}")
-    print("-" * 75)
-    print(f"{Color.AMARILLO}{TXT['ctrl_c']}{Color.RESET}\n")
+            last_user_id = None
+            for enc in ['utf-16', 'utf-8-sig', 'utf-8']:
+                try:
+                    with open(ruta_riot, 'r', encoding=enc) as f:
+                        match = re.search(r'LastKnownUser=(.*)', f.read())
+                        if match:
+                            last_user_id = re.sub(r'[^a-zA-Z0-9-]', '', match.group(1).strip())
+                            break
+                except: continue
 
-def actualizar_o_insertar(contenido, clave, valor, ancla=None):
-    if re.search(rf'^{clave}=.*', contenido, re.MULTILINE):
-        return re.sub(rf'^{clave}=.*', f'{clave}={valor}', contenido, flags=re.MULTILINE)
-    else:
-        if ancla and re.search(rf'^{ancla}=.*', contenido, re.MULTILINE):
-            return re.sub(rf'^({ancla}=.*)', rf'\1\n{clave}={valor}', contenido, flags=re.MULTILINE)
-        return contenido.replace('[/Script/Engine.GameUserSettings]', f'{clave}={valor}\n\n[/Script/Engine.GameUserSettings]')
+            if not last_user_id: return None
+            id_query = last_user_id.lower()
+            base_path = os.path.join(local_appdata, 'VALORANT', 'Saved', 'Config')
+            
+            if os.path.exists(base_path):
+                for carpeta in os.listdir(base_path):
+                    if id_query.replace("-","") in carpeta.lower().replace("-",""):
+                        ruta = os.path.join(base_path, carpeta, 'WindowsClient', 'GameUserSettings.ini')
+                        if os.path.exists(ruta): return ruta
+            return None
+        except: return None
 
-def modificar_archivo():
-    global TXT
-    try:
-        TXT = seleccionar_idioma()
-        os.system('cls')
-        print(f"{Color.CIAN}{'='*65}{Color.RESET}")
-        print(f"{Color.BOLD}      {TXT['titulo']}{Color.RESET}")
-        print(f"{Color.CIAN}{'='*65}{Color.RESET}")
-        ruta_archivo = obtener_ruta_activa()
-        if not ruta_archivo:
-            print(f"\n{Color.ROJO}{TXT['err_ruta']}{Color.RESET}")
-            input(f"\n{TXT['finalizar']}")
-            return
-        mostrar_menu_resoluciones()
-        x = input(f"{Color.BOLD}{TXT['input_x']}{Color.RESET}").strip()
-        y = input(f"{Color.BOLD}{TXT['input_y']}{Color.RESET}").strip()
-        if not x.isdigit() or not y.isdigit():
-            print(f"\n{Color.ROJO}{TXT['err_num']}{Color.RESET}")
-            input(f"{TXT['finalizar']}")
-            return
-        with open(ruta_archivo, 'r', encoding='utf-8') as f:
-            contenido = f.read()
-        params = {
-            'bShouldLetterbox': 'False', 'bLastConfirmedShouldLetterbox': 'False',
-            'bUseVSync': 'False', 'bUseDynamicResolution': 'False',
-            'ResolutionSizeX': x, 'ResolutionSizeY': y,
-            'LastUserConfirmedResolutionSizeX': x, 'LastUserConfirmedResolutionSizeY': y,
-            'WindowPosX': '0', 'WindowPosY': '0',
-            'LastConfirmedFullscreenMode': '2', 'PreferredFullscreenMode': '0',
-            'AudioQualityLevel': '0', 'LastConfirmedAudioQualityLevel': '0'
-        }
-        for clave, valor in params.items():
-            contenido = actualizar_o_insertar(contenido, clave, valor)
-        contenido = actualizar_o_insertar(contenido, 'FullscreenMode', '2', ancla='HDRDisplayOutputNits')
-        patron_scal = r'\[ScalabilityGroups\].*?(?=\n\[|$)'
-        nuevo_scal = (
-            "[ScalabilityGroups]\nsg.ResolutionQuality=65.000000\nsg.ViewDistanceQuality=0\n"
-            "sg.AntiAliasingQuality=0\nsg.ShadowQuality=0\nsg.PostProcessQuality=0\n"
-            "sg.TextureQuality=0\nsg.EffectsQuality=0\nsg.FoliageQuality=0\n"
-            "sg.ShadingQuality=0\nsg.GlobalIlluminationQuality=0\nsg.ReflectionQuality=0"
-        )
-        contenido = re.sub(patron_scal, nuevo_scal, contenido, flags=re.DOTALL)
-        with open(ruta_archivo, 'w', encoding='utf-8') as f:
-            f.write(contenido)
-        print(f"\n{Color.VERDE}{TXT['exito']}{Color.RESET}")
-        print(f"{Color.AMARILLO}{TXT['importante']}{Color.RESET}")
-        input(f"\n{TXT['finalizar']}")
-    except KeyboardInterrupt:
-        print(f"\n\n{Color.ROJO}{TXT['cancelado']}{Color.RESET}")
-        sys.exit()
+    def cambiar_idioma(self):
+        self.lang = "EN" if self.switch_lang.get() == 1 else "ES"
+        t = self.idiomas[self.lang]
+        
+        self.label_titulo.configure(text=t["titulo"])
+        self.label_res_p.configure(text=t["res_perso"])
+        self.entry_x.configure(placeholder_text=t["ancho"])
+        self.entry_y.configure(placeholder_text=t["alto"])
+        self.label_sug.configure(text=t["sugeridas"])
+        self.btn_aplicar.configure(text=t["btn_aplicar"])
+        self.label_footer.configure(text=t["footer"])
+        self.btn_donar.configure(text=t["donar"])
+        self.btn_github.configure(text=t["repo"])
+        
+        texto_actual = self.combo_res.get()
+        if texto_actual in ["CTkComboBox", "", self.idiomas["ES"]["combo_init"], self.idiomas["EN"]["combo_init"]]:
+            self.combo_res.set(t["combo_init"])
+        
+        self.combo_res.configure(values=t["opciones"])
+        
+        if self.ruta_ini:
+            nombre = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
+            self.label_estado.configure(text=f"{t['cuenta_ok']} {nombre}")
+        else:
+            self.label_estado.configure(text=t["cuenta_no"])
+
+    def setup_ui(self):
+        # 1. Switch de Idioma
+        self.switch_lang = ctk.CTkSwitch(self, text="English", command=self.cambiar_idioma)
+        self.switch_lang.pack(anchor="ne", padx=20, pady=10)
+
+        # 2. Título principal
+        self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 26, "bold"))
+        self.label_titulo.pack(pady=(5, 10))
+
+        # 3. Estado de cuenta
+        self.label_estado = ctk.CTkLabel(self, text="", font=("Segoe UI", 13, "bold"))
+        self.label_estado.pack(pady=5)
+
+        # 4. Frame de Resolución Personalizada
+        frame = ctk.CTkFrame(self, fg_color="#2b2b2b")
+        frame.pack(pady=15, padx=40, fill="x")
+        
+        self.label_res_p = ctk.CTkLabel(frame, text="", font=("Segoe UI", 12, "bold"))
+        self.label_res_p.pack(pady=5)
+        
+        self.entry_x = ctk.CTkEntry(frame, height=35)
+        self.entry_x.pack(pady=8, padx=30, fill="x")
+
+        self.entry_y = ctk.CTkEntry(frame, height=35)
+        self.entry_y.pack(pady=8, padx=30, fill="x")
+
+        # 5. Sección de Resoluciones Sugeridas
+        self.label_sug = ctk.CTkLabel(self, text="", font=("Segoe UI", 12))
+        self.label_sug.pack(pady=(10, 0))
+        
+        self.combo_res = ctk.CTkComboBox(self, values=[], command=self.set_res, width=300)
+        self.combo_res.pack(pady=10)
+
+        # 6. Botón Aplicar
+        self.btn_aplicar = ctk.CTkButton(self, text="", fg_color="#ff4655", hover_color="#bd3944", 
+                                         height=45, font=("Segoe UI", 14, "bold"), command=self.aplicar)
+        self.btn_aplicar.pack(pady=20, padx=40, fill="x")
+
+        # 7. Sección Social y Donaciones
+        self.frame_social = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_social.pack(pady=10, padx=40, fill="x")
+
+        self.btn_github = ctk.CTkButton(self.frame_social, text="", fg_color="#333333", hover_color="#444444", 
+                                        height=32, command=lambda: self.abrir_url("https://github.com"))
+        self.btn_github.pack(pady=5, fill="x")
+
+        self.frame_donar = ctk.CTkFrame(self.frame_social, fg_color="transparent")
+        self.frame_donar.pack(fill="x", pady=5)
+
+        self.btn_donar = ctk.CTkButton(self.frame_donar, text="", fg_color="#FFDD00", text_color="black", hover_color="#FFEA00", 
+                                       height=32, font=("Segoe UI", 11, "bold"), 
+                                       command=lambda: self.abrir_url("https://buymeacoffee.com"))
+        self.btn_donar.pack(side="left", padx=(0, 5), expand=True, fill="x")
+
+        self.btn_stream = ctk.CTkButton(self.frame_donar, text="Streamlabs 🎮", fg_color="#31f7ed", text_color="black", hover_color="#29d9d0", 
+                                        height=32, font=("Segoe UI", 11, "bold"), 
+                                        command=lambda: self.abrir_url("https://streamlabs.com"))
+        self.btn_stream.pack(side="left", padx=(5, 0), expand=True, fill="x")
+
+        # 8. Pie de página
+        self.label_footer = ctk.CTkLabel(self, text="", font=("Segoe UI", 10), text_color="gray")
+        self.label_footer.pack(side="bottom", pady=10)
+
+        self.cambiar_idioma()
+
+    def set_res(self, choice):
+        match = re.search(r'(\d+)x(\d+)', choice)
+        if match:
+            x, y = match.groups()
+            self.entry_x.delete(0, 'end')
+            self.entry_x.insert(0, x)
+            self.entry_y.delete(0, 'end')
+            self.entry_y.insert(0, y)
+
+    def actualizar_o_insertar(self, contenido, clave, valor, ancla=None):
+        if re.search(rf'^{clave}=.*', contenido, re.MULTILINE):
+            return re.sub(rf'^{clave}=.*', f'{clave}={valor}', contenido, flags=re.MULTILINE)
+        else:
+            if ancla and re.search(rf'^{ancla}=.*', contenido, re.MULTILINE):
+                return re.sub(rf'^({ancla}=.*)', rf'\1\n{clave}={valor}', contenido, flags=re.MULTILINE)
+            return contenido.replace('[/Script/Engine.GameUserSettings]', f'{clave}={valor}\n\n[/Script/Engine.GameUserSettings]')
+
+    def aplicar(self):
+        t = self.idiomas[self.lang]
+        if not self.ruta_ini: return
+        x, y = self.entry_x.get().strip(), self.entry_y.get().strip()
+        if not x.isdigit() or not y.isdigit(): return
+        try:
+            with open(self.ruta_ini, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+            params = {
+                'bShouldLetterbox': 'False', 'bLastConfirmedShouldLetterbox': 'False',
+                'bUseVSync': 'False', 'bUseDynamicResolution': 'False',
+                'ResolutionSizeX': x, 'ResolutionSizeY': y,
+                'LastUserConfirmedResolutionSizeX': x, 'LastUserConfirmedResolutionSizeY': y,
+                'WindowPosX': '0', 'WindowPosY': '0',
+                'LastConfirmedFullscreenMode': '2', 'PreferredFullscreenMode': '0',
+                'AudioQualityLevel': '0', 'LastConfirmedAudioQualityLevel': '0'
+            }
+            for clave, valor in params.items():
+                contenido = self.actualizar_o_insertar(contenido, clave, valor)
+            contenido = self.actualizar_o_insertar(contenido, 'FullscreenMode', '2', ancla='HDRDisplayOutputNits')
+            patron_scal = r'\[ScalabilityGroups\].*?(?=\n\[|$)'
+            nuevo_scal = "[ScalabilityGroups]\nsg.ResolutionQuality=65.000000\nsg.ViewDistanceQuality=0\nsg.AntiAliasingQuality=0\nsg.ShadowQuality=0\nsg.PostProcessQuality=0\nsg.TextureQuality=0\nsg.EffectsQuality=0\nsg.FoliageQuality=0\nsg.ShadingQuality=0\nsg.GlobalIlluminationQuality=0\nsg.ReflectionQuality=0"
+            contenido = re.sub(patron_scal, nuevo_scal, contenido, flags=re.DOTALL)
+            with open(self.ruta_ini, 'w', encoding='utf-8') as f:
+                f.write(contenido)
+            messagebox.showinfo("Success / Éxito", t["exito"].format(x, y))
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
 if __name__ == "__main__":
-    modificar_archivo()
+    app = ValorantConfigApp()
+    app.mainloop()
