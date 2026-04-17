@@ -152,33 +152,53 @@ class ValorantConfigApp(ctk.CTk):
         
         self.combo_res = ctk.CTkComboBox(self, values=[], command=self.set_res, width=300)
         self.combo_res.pack(pady=10)
+        # 6. Botón Aplicar (Diseño Premium)
+        self.btn_aplicar = ctk.CTkButton(
+            self, 
+            text="", 
+            fg_color="#ff4655", 
+            hover_color="#bd3944", 
+            height=55,                  # Aumentado de 45 a 55 para que sea más imponente
+            font=("Segoe UI", 16, "bold"), # Fuente más grande (16) para que destaque
+            corner_radius=10,           # Bordes ligeramente más redondeados para un look moderno
+            command=self.aplicar
+        )
+        self.btn_aplicar.pack(pady=25, padx=40, fill="x")
 
-        # 6. Botón Aplicar
-        self.btn_aplicar = ctk.CTkButton(self, text="", fg_color="#ff4655", hover_color="#bd3944", 
-                                         height=45, font=("Segoe UI", 14, "bold"), command=self.aplicar)
-        self.btn_aplicar.pack(pady=20, padx=40, fill="x")
 
-        # 7. Sección Social y Donaciones
+
+ # 7. Sección Social y Donaciones
         self.frame_social = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_social.pack(pady=10, padx=40, fill="x")
 
-        self.btn_github = ctk.CTkButton(self.frame_social, text="", fg_color="#333333", hover_color="#444444", 
-                                        height=32, command=lambda: self.abrir_url("https://github.com"))
+        # Botón GitHub - Hover Gris más claro
+        self.btn_github = ctk.CTkButton(self.frame_social, text="", 
+                                        fg_color="#333333", 
+                                        hover_color="#444444", # Efecto hover
+                                        height=32, 
+                                        command=lambda: self.abrir_url("https://github.com"))
         self.btn_github.pack(pady=5, fill="x")
 
         self.frame_donar = ctk.CTkFrame(self.frame_social, fg_color="transparent")
         self.frame_donar.pack(fill="x", pady=5)
 
-        self.btn_donar = ctk.CTkButton(self.frame_donar, text="", fg_color="#FFDD00", text_color="black", hover_color="#FFEA00", 
+        # Botón Buy Me a Coffee - Hover Amarillo más brillante
+        self.btn_donar = ctk.CTkButton(self.frame_donar, text="", 
+                                       fg_color="#FFDD00", 
+                                       text_color="black", 
+                                       hover_color="#FFEA00", # Efecto hover
                                        height=32, font=("Segoe UI", 11, "bold"), 
                                        command=lambda: self.abrir_url("https://buymeacoffee.com"))
         self.btn_donar.pack(side="left", padx=(0, 5), expand=True, fill="x")
 
-        self.btn_stream = ctk.CTkButton(self.frame_donar, text="Streamlabs 🎮", fg_color="#31f7ed", text_color="black", hover_color="#29d9d0", 
+        # Botón Streamlabs - Hover Cian más intenso
+        self.btn_stream = ctk.CTkButton(self.frame_donar, text="Streamlabs 🎮", 
+                                        fg_color="#31f7ed", 
+                                        text_color="black", 
+                                        hover_color="#29d9d0", # Efecto hover
                                         height=32, font=("Segoe UI", 11, "bold"), 
                                         command=lambda: self.abrir_url("https://streamlabs.com"))
         self.btn_stream.pack(side="left", padx=(5, 0), expand=True, fill="x")
-
         # 8. Pie de página
         self.label_footer = ctk.CTkLabel(self, text="", font=("Segoe UI", 10), text_color="gray")
         self.label_footer.pack(side="bottom", pady=10)
