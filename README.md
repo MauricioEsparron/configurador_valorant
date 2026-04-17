@@ -4,19 +4,14 @@ Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores
 
 ## 📸 Capturas de Pantalla
 
-
-| Selección de Idioma | Interfaz (Español) |
-| <img width="512" height="844" alt="Screenshot 2026-04-17 004105" src="https://github.com/user-attachments/assets/f7f66891-7117-428d-a197-e9effcb390eb" />
- | <img width="517" height="845" alt="Screenshot 2026-04-17 004141" src="https://github.com/user-attachments/assets/d441873e-83a9-4521-aa0a-c865c05ba481" />
- |
-| <img src="https://github.com/user-attachments/assets/a5e626e8-b11c-4204-a8bc-1841868a3747" width="250"> | <img src="URL_DE_TU_IMAGEN_2" width="250"> |
+| Selección de Idioma | Interfaz Principal |
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/f7f66891-7117-428d-a197-e9effcb390eb" width="280"> | <img src="https://github.com/user-attachments/assets/d441873e-83a9-4521-aa0a-c865c05ba481" width="280"> |
 
 | Selección de Resolución | Éxito al Aplicar |
-| <img width="519" height="843" alt="Screenshot 2026-04-17 004209" src="https://github.com/user-attachments/assets/4bc568ce-37d8-4199-a9ce-51e3d7286073" />
- | <img width="330" height="166" alt="Screenshot 2026-04-17 004613" src="https://github.com/user-attachments/assets/e484987c-ad8e-4485-b575-09f3d86e5101" />
- |
-| <img src="URL_DE_TU_IMAGEN_3" width="250"> | <img src="URL_DE_TU_IMAGEN_4" width="250"> |
-<!-- Opcional: Sube tu captura a GitHub y pon el link aquí -->
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/4bc568ce-37d8-4199-a9ce-51e3d7286073" width="280"> | <img src="https://github.com/user-attachments/assets/e484987c-ad8e-4485-b575-09f3d86e5101" width="280"> |
+
 
 ## ✨ Características Principales
 *   **Detección Inteligente de Cuenta:** Localiza automáticamente la carpeta de configuración de tu última cuenta activa (soporte para múltiples regiones: LATAM, BR, NA, etc.).
