@@ -199,11 +199,29 @@ class ValorantConfigApp(ctk.CTk):
                                         height=32, font=("Segoe UI", 11, "bold"), 
                                         command=lambda: self.abrir_url("https://streamlabs.com"))
         self.btn_stream.pack(side="left", padx=(5, 0), expand=True, fill="x")
-        # 8. Pie de página
-        self.label_footer = ctk.CTkLabel(self, text="", font=("Segoe UI", 10), text_color="gray")
-        self.label_footer.pack(side="bottom", pady=10)
+        
+               # 8. Mensaje de advertencia (Footer Informativo)
+        self.label_footer = ctk.CTkLabel(
+            self, 
+            text="", 
+            font=("Segoe UI", 9, "italic"), 
+            text_color="gray"
+        )
+        self.label_footer.pack(side="bottom", pady=(5, 10))
 
+        # 9. Créditos Finales (Autor y Fecha)
+        self.label_footer_autor = ctk.CTkLabel(
+            self, 
+            text="Developed by Mauricio Ramirez | 16/04/2026 | v1.0.0", 
+            font=("Segoe UI", 10, "bold"), 
+            text_color="#666666"
+        )
+        self.label_footer_autor.pack(side="bottom", pady=(0, 15))
+
+        # Cargar idiomas al final (esto llenará el texto de self.label_footer)
         self.cambiar_idioma()
+
+
 
     def set_res(self, choice):
         match = re.search(r'(\d+)x(\d+)', choice)
