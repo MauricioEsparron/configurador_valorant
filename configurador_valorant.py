@@ -116,9 +116,18 @@ class ValorantConfigApp(ctk.CTk):
         
         if self.ruta_ini:
             nombre = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
-            self.label_estado.configure(text=f"{t['cuenta_ok']} {nombre}")
+            # Añadimos el verde brillante
+            self.label_estado.configure(
+                text=f"{t['cuenta_ok']} {nombre}", 
+                text_color="#4ade80"
+            )
         else:
-            self.label_estado.configure(text=t["cuenta_no"])
+            # Añadimos el rojo para el error
+            self.label_estado.configure(
+                text=t["cuenta_no"], 
+                text_color="#f87171"
+            )
+
 
     def setup_ui(self):
         # 1. Switch de Idioma
