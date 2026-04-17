@@ -39,44 +39,50 @@ def obtener_ruta_activa():
             if id_query in carpeta_limpia:
                 ruta_final = os.path.join(base_config_path, carpeta, 'WindowsClient', 'GameUserSettings.ini')
                 if os.path.exists(ruta_final):
-                    print(f"{Color.VERDE} Cuenta activa detectada:{Color.RESET} {Color.CIAN}{carpeta}{Color.RESET}")
+                    print(f"{Color.VERDE}✅ Cuenta activa detectada:{Color.RESET} {Color.CIAN}{carpeta}{Color.RESET}")
                     return ruta_final
     return None
 
 def mostrar_menu_resoluciones():
-    print(f"\n{Color.BOLD} LISTA DE RESOLUCIONES 4:3 RECOMENDADAS{Color.RESET}")
+    print(f"\n{Color.BOLD}📌 LISTA DE RESOLUCIONES 4:3 RECOMENDADAS{Color.RESET}")
     print("-" * 65)
     print(f"{Color.CIAN}{'ANCHO (X)':<12} | {'ALTO (Y)':<10}{Color.RESET} | {'CALIDAD / USO'}")
     print("-" * 65)
     print(f"{'1920':<12} x {'1440':<10} | Alta / 2K")
     print(f"{'1600':<12} x {'1200':<10} | Alta / Estándar")
-    print(f"{'1440':<12} x {'1080':<10} | Ideal para monitores 1080p")
-    print(f"{'1280':<12} x {'960':<10} | Equilibrada / Popular")
+    print(f"{'1440':<12} x {'1080':<10} | {Color.VERDE}Ideal para monitores 1080p{Color.RESET}")
+    print(f"{'1280':<12} x {'960':<10} | {Color.AMARILLO}Equilibrada / Popular{Color.RESET}")
     print(f"{'1152':<12} x {'864':<10} | Calidad Media")
     print(f"{'1024':<12} x {'768':<10} | Baja / Rendimiento FPS")
-    print(f"{'800':<12} x {'600':<10} | Extrema / PC de bajos recursos")
-    print(f"{'640':<12} x {'480':<10} | Mínima")
     print("-" * 65)
     print(f"{Color.AMARILLO}💡 Presiona Ctrl + C en cualquier momento para cancelar.{Color.RESET}\n")
 
+def actualizar_o_insertar(contenido, clave, valor, ancla=None):
+    """Actualiza una línea si existe, o la inserta después de una línea 'ancla'"""
+    if re.search(rf'^{clave}=.*', contenido, re.MULTILINE):
+        # Si existe, actualizamos el valor
+        return re.sub(rf'^{clave}=.*', f'{clave}={valor}', contenido, flags=re.MULTILINE)
+    else:
+        # Si no existe y tenemos ancla, insertamos después del ancla
+        if ancla and re.search(rf'^{ancla}=.*', contenido, re.MULTILINE):
+            return re.sub(rf'^({ancla}=.*)', rf'\1\n{clave}={valor}', contenido, flags=re.MULTILINE)
+        # Si no hay ancla, lo añadimos al final de la sección principal (antes de los corchetes)
+        return contenido.replace('[/Script/Engine.GameUserSettings]', f'{clave}={valor}\n\n[/Script/Engine.GameUserSettings]')
+
 def modificar_archivo():
-    # Habilitar colores en consolas de Windows antiguas
     os.system('') 
-    
     try:
         print(f"{Color.CIAN}{'='*65}{Color.RESET}")
         print(f"{Color.BOLD}      VALORANT STRETCHED RESOLUTION CONFIGURATOR (4:3){Color.RESET}")
         print(f"{Color.CIAN}{'='*65}{Color.RESET}")
         
         ruta_archivo = obtener_ruta_activa()
-        
         if not ruta_archivo:
             print(f"\n{Color.ROJO}❌ Error: No se encontró la ruta de configuración activa.{Color.RESET}")
             input("\nPresiona Enter para salir...")
             return
 
         mostrar_menu_resoluciones()
-
         x = input(f"{Color.BOLD}👉 Ingresa el ANCHO (X): {Color.RESET}").strip()
         y = input(f"{Color.BOLD}👉 Ingresa el ALTO (Y):  {Color.RESET}").strip()
 
@@ -88,25 +94,30 @@ def modificar_archivo():
         with open(ruta_archivo, 'r', encoding='utf-8') as f:
             contenido = f.read()
 
-        # --- PROCESAMIENTO ---
-        for flag in ['bShouldLetterbox', 'bLastConfirmedShouldLetterbox', 'bUseVSync', 'bUseDynamicResolution']:
-            contenido = re.sub(rf'{flag}=.*', f'{flag}=False', contenido)
+        # 1. Parámetros booleanos y Resoluciones (Actualización simple)
+        params = {
+            'bShouldLetterbox': 'False',
+            'bLastConfirmedShouldLetterbox': 'False',
+            'bUseVSync': 'False',
+            'bUseDynamicResolution': 'False',
+            'ResolutionSizeX': x,
+            'ResolutionSizeY': y,
+            'LastUserConfirmedResolutionSizeX': x,
+            'LastUserConfirmedResolutionSizeY': y,
+            'WindowPosX': '0',
+            'WindowPosY': '0',
+            'LastConfirmedFullscreenMode': '2',
+            'PreferredFullscreenMode': '0',
+            'AudioQualityLevel': '0',
+            'LastConfirmedAudioQualityLevel': '0'
+        }
+        for clave, valor in params.items():
+            contenido = actualizar_o_insertar(contenido, clave, valor)
 
-        contenido = re.sub(r'ResolutionSizeX=.*', f'ResolutionSizeX={x}', contenido)
-        contenido = re.sub(r'ResolutionSizeY=.*', f'ResolutionSizeY={y}', contenido)
-        contenido = re.sub(r'LastUserConfirmedResolutionSizeX=.*', f'LastUserConfirmedResolutionSizeX={x}', contenido)
-        contenido = re.sub(r'LastUserConfirmedResolutionSizeY=.*', f'LastUserConfirmedResolutionSizeY={y}', contenido)
+        # 2. Manejo de FullscreenMode=2 debajo de HDRDisplayOutputNits=1000
+        contenido = actualizar_o_insertar(contenido, 'FullscreenMode', '2', ancla='HDRDisplayOutputNits')
 
-        contenido = re.sub(r'WindowPosX=.*', 'WindowPosX=0', contenido)
-        contenido = re.sub(r'WindowPosY=.*', 'WindowPosY=0', contenido)
-        contenido = re.sub(r'LastConfirmedFullscreenMode=.*', 'LastConfirmedFullscreenMode=2', contenido)
-        contenido = re.sub(r'PreferredFullscreenMode=.*', 'PreferredFullscreenMode=0', contenido)
-
-        if "FullscreenMode=2" not in contenido:
-            contenido = re.sub(r'(HDRDisplayOutputNits=1000)', r'\1\nFullscreenMode=2', contenido)
-        else:
-            contenido = re.sub(r'FullscreenMode=.*', 'FullscreenMode=2', contenido)
-
+        # 3. Sobrescribir ScalabilityGroups (Sección completa)
         patron_scal = r'\[ScalabilityGroups\].*?(?=\n\[|$)'
         nuevo_scal = (
             "[ScalabilityGroups]\nsg.ResolutionQuality=65.000000\nsg.ViewDistanceQuality=0\n"
@@ -119,12 +130,12 @@ def modificar_archivo():
         with open(ruta_archivo, 'w', encoding='utf-8') as f:
             f.write(contenido)
         
-        print(f"\n{Color.VERDE}🚀 ¡Éxito! Archivo actualizado a {x}x{y}.{Color.RESET}")
+        print(f"\n{Color.VERDE}🚀 ¡Éxito! Archivo actualizado sin duplicados.{Color.RESET}")
         print(f"{Color.AMARILLO}💡 IMPORTANTE: Verifica la escala en el panel de NVIDIA/AMD.{Color.RESET}")
         input("\nPresiona Enter para finalizar...")
 
     except KeyboardInterrupt:
-        print(f"\n\n{Color.ROJO}⚠️ Operación cancelada con éxito por el usuario.{Color.RESET}")
+        print(f"\n\n{Color.ROJO}⚠️ Operación cancelada con éxito.{Color.RESET}")
         sys.exit()
 
 if __name__ == "__main__":
