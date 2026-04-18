@@ -241,9 +241,9 @@ class ValorantConfigApp(ctk.CTk):
         # Redes Sociales
         self.frame_social = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_social.pack(pady=10)
-        self.crear_soc(self.img_github, "#000", "https://github.com")
-        self.crear_soc(self.img_coffee, "#FFDD00", "https://buymeacoffee.com")
-        self.crear_soc(self.img_stream, "#7FF5D2", "https://streamlabs.com")
+        self.crear_soc(self.img_github, "#000", "https://github.com/MauricioEsparron/configurador_valorant")
+        self.crear_soc(self.img_coffee, "#FFDD00", "https://buymeacoffee.com/maxpredator01")
+        self.crear_soc(self.img_stream, "#7FF5D2", "https://streamlabs.com/maxpredator01/tip")
 
         # --- SECCIÓN DE CRÉDITOS ---
         self.label_creditos = ctk.CTkLabel(self, text="", font=("Segoe UI", 10, "bold"), text_color="#9ca3af")
