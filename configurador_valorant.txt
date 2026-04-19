@@ -391,15 +391,15 @@ class ValorantConfigApp(ctk.CTk):
         self.combo_res.configure(state=estado_input)
         self.slider_calidad.configure(state=estado_input)
         self.switch_fps.configure(state=estado_input)
-            # 2. Botones de Backup
+               # 2. Botones de Backup
         if esta_bloqueado:
             self.btn_crear_bk.configure(command=None, hover_color=self.btn_crear_bk.cget("fg_color"))
             self.btn_restaurar_bk.configure(command=None, hover_color=self.btn_restaurar_bk.cget("fg_color"))
         else:
-            # --- CORRECCIÓN DE NOMBRES SEGÚN TU CÓDIGO ACTUAL ---
-            # El PDF muestra que usas 'crear_backup_manual' y 'restaurar_backup'
-            self.btn_crear_bk.configure(command=self.crear_backup_manual, hover_color="#2563eb")
-            self.btn_restaurar_bk.configure(command=self.restaurar_backup, hover_color="#2563eb")
+            # --- FORZAMOS LA CONEXIÓN MANUAL ---
+            # Asegúrate de que después de 'def' en tu código diga exactamente esto:
+            self.btn_crear_bk.configure(command=self.crear_bk, hover_color="#2563eb")
+            self.btn_restaurar_bk.configure(command=self.restaurar_bk, hover_color="#2563eb")
 
     # --- RESTO DE LÓGICA (backup, aplicar, ayuda...) ---
     def aplicar(self):
