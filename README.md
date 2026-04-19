@@ -7,10 +7,9 @@ Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores
 
 | Selección de Idioma | Interfaz Principal |
 | :---: | :---: |
-| <img src="https://github.com" width="280"> | <img src="https://github.com" width="280"> |
-| Selección de Resolución | Éxito al Aplicar |
-| :---: | :---: |
-| <img src="https://github.com" width="280"> | <img src="https://github.com" width="280"> |
+| <img width="545" alt="image" src="https://github.com/user-attachments/assets/66a60e31-dfdd-414b-8673-160a4ae0418d" /> | <img width="549" alt="image" src="https://github.com/user-attachments/assets/191a8a1b-3eff-42d7-befd-51ae393a2161" /> |
+| **Selección de Resolución** | **Éxito al Aplicar** |
+| <img width="543" alt="image" src="https://github.com/user-attachments/assets/af8693a1-7179-4a74-8c9d-06ad9fb8ba48" /> | <img width="215" alt="image" src="https://github.com/user-attachments/assets/2be1adbd-94ee-4820-a7f0-0b999c32f181" /> |
 
 ## ✨ Características Principales
 
@@ -25,7 +24,7 @@ Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores
 ## 🚀 Cómo usar
 
 1. **Cierra VALORANT** por completo.
-2. Descarga el ejecutable desde la sección de [Releases](https://github.com).
+2. Descarga el ejecutable desde la sección de [Releases](https://github.com/MauricioEsparron/configurador_valorant/releases).
 3. Ejecuta el programa como **Administrador**.
 4. Selecciona tu resolución o ingresa una personalizada.
 5. Haz clic en **APLICAR CONFIGURACIÓN**.
@@ -42,8 +41,8 @@ Una herramienta de escritorio moderna, rápida y segura diseñada para jugadores
 
 Si esta herramienta te ha sido útil y quieres apoyar el desarrollo de más contenido como este:
 
-*   [Buy Me a Coffee](https://buymeacoffee.com)
-*   [Donaciones vía Streamlabs](https://streamlabs.com)
+*   [Buy Me a Coffee](https://buymeacoffee.com/maxpredator01)
+*   [Donaciones vía Streamlabs](https://streamlabs.com/maxpredator01/tip)
 
 ---
 
