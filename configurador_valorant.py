@@ -91,7 +91,7 @@ class ValorantConfigApp(ctk.CTk):
                 "sugeridas": "Suggested resolutions:",
                 "btn_aplicar": "APPLY CONFIGURATION",
                 "footer": "Close the game before applying changes",
-                "creditos": "Developed by Mauricio Ramirez | 16/04/2026 | v1.0.0", # <--- NUEVO
+                "creditos": "Developed by Mauricio Ramirez | 16/04/2026 | v1.1.0", # <--- NUEVO
                 "combo_init": "Select resolution...",
                 "boost": "Ultra FPS Boost",
                 "bloquear": "Lock File (Read Only)",
@@ -99,7 +99,7 @@ class ValorantConfigApp(ctk.CTk):
                 "btn_crear_bk": "CREATE BACKUP",
                 "btn_restaurar_bk": "RETURN TO PREVIOUS",
                 "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
-                "help_boost": "Forces ultra-low graphics settings not available in normal menus.\nAll values will be set to 0.",
+                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: All values will be set to 0.",
                 "help_lock": "Sets file to Read Only to prevent resets.",
                 "bk_exito": "Backup created successfully.",
                 "bk_restaurado": "Returned to previous version.",
@@ -119,6 +119,9 @@ class ValorantConfigApp(ctk.CTk):
         self.cambiar_idioma() 
         self.leer_datos_actuales()
         self.crear_acceso_directo_inicio()
+
+    # --- LÍNEA PARA EL REFRESCO ---
+        self.bind("<FocusIn>", lambda e: self.leer_datos_actuales())
 
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
@@ -196,8 +199,41 @@ class ValorantConfigApp(ctk.CTk):
         except: pass
 
     def setup_ui(self):
-        self.switch_lang = ctk.CTkSwitch(self, text="English", command=self.cambiar_idioma)
-        self.switch_lang.pack(anchor="ne", padx=20, pady=10)
+        # Contenedor superior con alineación mejorada
+        self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.top_frame.pack(anchor="ne", padx=20, pady=10)
+
+        # Cargar imagen de refresco
+        #try:
+            # Bajamos un poco el tamaño a 16x16 para que no se vea tosco
+         #   img_refresh = ctk.CTkImage(light_image=Image.open("refresh.png"), 
+                          #            dark_image=Image.open("refresh.png"), 
+                             #         size=(16, 16))
+        ##   img_refresh = None
+
+        # Botón de refresco (Estilo minimalista)
+         # self.btn_refresh = ctk.CTkButton(
+           #   self.top_frame, 
+           #   image=img_refresh,
+          #    text="", 
+          #    width=32, # Cuadrado perfecto
+           #   height=32,
+         #     corner_radius=16, # Lo hace circular
+          #    fg_color="transparent", 
+           #   hover_color="#333333",
+           #   command=self.leer_datos_actuales
+       #   )
+      #    self.btn_refresh.pack(side="left", padx=(0, 5))
+
+        # Botón cambio idioma
+        self.switch_lang = ctk.CTkSwitch(
+            self.top_frame, 
+            text="English", 
+            command=self.cambiar_idioma,
+            progress_color="#ff4655" # Rojo VALORANT para el switch
+        )
+        self.switch_lang.pack(side="left")
+
 
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
         self.label_titulo.pack(pady=5)
