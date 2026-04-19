@@ -165,7 +165,10 @@ class ValorantConfigApp(ctk.CTk):
             q = re.search(r'sg\.ResolutionQuality=(\d+)', contenido)
             if q:
                 num = int(float(q.group(1)))
-                self.slider_calidad.set(num), self.label_slider_num.configure(text=f"{num}%")
+            self.slider_calidad.set(num)
+            self.label_slider_num.configure(text=f"{num}%")
+            self.actualizar_label_slider(num) # Esto dispara el cambio de color
+
         except: pass
 
     def setup_ui(self):
