@@ -165,10 +165,34 @@ class ValorantConfigApp(ctk.CTk):
             q = re.search(r'sg\.ResolutionQuality=(\d+)', contenido)
             if q:
                 num = int(float(q.group(1)))
-            self.slider_calidad.set(num)
-            self.label_slider_num.configure(text=f"{num}%")
-            self.actualizar_label_slider(num) # Esto dispara el cambio de color
+                self.slider_calidad.set(num)
+                self.label_slider_num.configure(text=f"{num}%")
+                self.actualizar_label_slider(num) 
 
+                # --- NUEVA LÓGICA DE DETECCIÓN DE SWITCHES ---
+            # 1. Detectar si el Impulso FPS está activo (Validación completa de todos los campos)
+            ajustes_fps = [
+                "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality",
+                "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality",
+                "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
+                "sg.ReflectionQuality"
+            ]
+            
+            # Verificamos si CADA uno de los ajustes está en 0 en el contenido del archivo
+            esta_activo = all(re.search(f'{k}=0', contenido) for k in ajustes_fps)
+
+            if esta_activo:
+                self.switch_fps.select()
+            else:
+                self.switch_fps.deselect()
+
+
+                # 2. Detectar si el archivo está bloqueado (Solo lectura)
+                if os.path.exists(self.ruta_ini):
+                    if not (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE):
+                        self.switch_lock.select()
+                    else:
+                        self.switch_lock.deselect()
         except: pass
 
     def setup_ui(self):
