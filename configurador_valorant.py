@@ -422,7 +422,6 @@ class ValorantConfigApp(ctk.CTk):
 
     # --- RESTO DE LÓGICA (backup, aplicar, ayuda...) ---
     def aplicar(self):
-
         t = self.idiomas[self.lang]
         if not self.ruta_ini: return
         
@@ -431,65 +430,99 @@ class ValorantConfigApp(ctk.CTk):
         
         cal_valor = int(self.slider_calidad.get())
         cal_formato = f"{cal_valor}.000000"
-             # Aseguramos permisos de escritura para poder guardar los cambios ahora mismo
+        
         import stat
         if os.path.exists(self.ruta_ini):
             mode = os.stat(self.ruta_ini).st_mode
             os.chmod(self.ruta_ini, mode | stat.S_IWRITE)
+
         try:
             with open(self.ruta_ini, 'r', encoding='utf-8') as f:
-                contenido = f.read()
+                contenido_original = f.read()
             
-            # 1. Parámetros generales y de resolución
+            contenido = contenido_original 
+
+            # 1. Parámetros de resolución
             params = {
-                'bShouldLetterbox': 'False', 'bLastConfirmedShouldLetterbox': 'False',
-                'bUseVSync': 'False', 'bUseDynamicResolution': 'False',
-                'ResolutionSizeX': x, 'ResolutionSizeY': y,
-                'LastUserConfirmedResolutionSizeX': x, 'LastUserConfirmedResolutionSizeY': y,
-                'WindowPosX': '0', 'WindowPosY': '0',
-                'LastConfirmedFullscreenMode': '2', 'PreferredFullscreenMode': '0',
-                'AudioQualityLevel': '0', 'LastConfirmedAudioQualityLevel': '0'
+                'bShouldLetterbox': 'False',
+                'bLastConfirmedShouldLetterbox': 'False',
+                'bUseVSync': 'False',
+                'bUseDynamicResolution': 'False',
+                'ResolutionSizeX': x,
+                'ResolutionSizeY': y,
+                'LastUserConfirmedResolutionSizeX': x,
+                'LastUserConfirmedResolutionSizeY': y,
+                'WindowPosX': '0',
+                'WindowPosY': '0',
+                'LastConfirmedFullscreenMode': '2',
+                'PreferredFullscreenMode': '0',
+                'AudioQualityLevel': '0',
+                'LastConfirmedAudioQualityLevel': '0'
             }
             
             for clave, valor in params.items():
                 contenido = self.actualizar_o_insertar(contenido, clave, valor)
             
             contenido = self.actualizar_o_insertar(contenido, 'FullscreenMode', '2', ancla='HDRDisplayOutputNits')
-            
-            # 2. Manejo de Calidad 3D (Siempre se actualiza según el Slider)
             contenido = re.sub(r'sg\.ResolutionQuality=.*', f'sg.ResolutionQuality={cal_formato}', contenido)
-            
-            # 3. LÓGICA DE IMPULSO FPS ULTRA (Solo si el switch está activado)
+
+            # 2. Impulso FPS
             if self.switch_fps.get():
-                ajustes_fps = [
-                    "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality", 
-                    "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality", 
-                    "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality", 
-                    "sg.ReflectionQuality"
-                ]
+                ajustes_fps = ["sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality", "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality", "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality", "sg.ReflectionQuality"]
                 for k in ajustes_fps:
                     contenido = re.sub(f'{k}=.*', f'{k}=0', contenido)
 
-            # Escribir cambios
-            # ... (código de escritura arriba)
+            # 3. Guardar cambios
             with open(self.ruta_ini, 'w', encoding='utf-8') as f:
                 f.write(contenido)
 
-            # --- 1. PRIMERO APLICAMOS EL BLOQUEO FÍSICO ---
-            # Al hacerlo aquí, el refresco posterior detectará que ya está bloqueado
+            # 4. Bloqueo físico
             if self.switch_read_only.get():
-                import stat
                 mode = os.stat(self.ruta_ini).st_mode
                 os.chmod(self.ruta_ini, mode & ~stat.S_IWRITE)
 
-            # --- 2. LUEGO EL MENSAJE DE ÉXITO ---
-            messagebox.showinfo("VALORANT", t["exito"].format(x, y, cal_valor))
+            # 5. LÓGICA DE MENSAJE INTELIGENTE
+            cambios = []
+            if f"ResolutionSizeX={x}" not in contenido_original or f"ResolutionSizeY={y}" not in contenido_original:
+                cambios.append(f"• {t['ancho']} {x} {t['alto']} {y}")
+            if f"sg.ResolutionQuality={cal_formato}" not in contenido_original:
+                cambios.append(f"• {t['calidad_res']} {cal_valor}%")
+                        # 3. Verificar FPS Boost (Validación estricta de las 10 líneas)
+            ajustes_fps_nombres = [
+                "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality",
+                "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality",
+                "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
+                "sg.ReflectionQuality"
+            ]
             
-            # --- 3. AL FINAL REFRESCAMOS LA INTERFAZ ---
-            self.leer_datos_actuales() 
+            # Comprobamos si en el archivo ORIGINAL ya estaban todas en 0
+            estaba_todo_en_zero = all(re.search(rf'^{k}=0', contenido_original, re.MULTILINE) for k in ajustes_fps_nombres)
+            
+            # Solo informamos el cambio si el usuario activó el switch Y no estaban todas en 0 antes
+            if self.switch_fps.get() and not estaba_todo_en_zero:
+                cambios.append(f"• {t['boost']}: ✅")
+
+            if self.switch_read_only.get() and (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE):
+                cambios.append(f"• {t['bloquear']}: ✅")
+
+            # Mostrar mensaje según cantidad de cambios
+            if len(cambios) == 1:
+                cuerpo = "Se realizó un cambio:" if self.lang == "ES" else "One change was made:"
+                mensaje_final = f"{cuerpo}\n\n{cambios[0]}"
+            elif len(cambios) > 1:
+                cuerpo = "Cambios aplicados en:" if self.lang == "ES" else "Changes applied to:"
+                mensaje_final = f"{cuerpo}\n\n" + "\n".join(cambios)
+            else:
+                mensaje_final = "La configuración ya estaba aplicada." if self.lang == "ES" else "Settings were already applied."
+
+            from tkinter import messagebox
+            messagebox.showinfo("VALORANT", mensaje_final)
+
+            self.leer_datos_actuales()
             self.actualizar_estado_interfaz()
 
         except Exception as e:
+            from tkinter import messagebox
             messagebox.showerror("Error", str(e))
 
 
