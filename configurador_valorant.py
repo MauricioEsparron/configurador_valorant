@@ -236,9 +236,9 @@ class ValorantConfigApp(ctk.CTk):
 
 
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
-        self.label_titulo.pack(pady=5)
+        self.label_titulo.pack(pady=2)
         self.label_estado = ctk.CTkLabel(self, text="", font=("Segoe UI", 12))
-        self.label_estado.pack(pady=5)
+        self.label_estado.pack(pady=2)
 
         vcmd = (self.register(self.validar_numeros), '%P')
         self.label_res_p = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
@@ -295,8 +295,20 @@ class ValorantConfigApp(ctk.CTk):
         self.btn_help_lock = ctk.CTkButton(self.frame_avanzado, text="?", width=18, height=18, corner_radius=9, fg_color="#334155", command=lambda: self.mostrar_ayuda("lock"))
         self.btn_help_lock.pack(side="left")
 
+        # --- MENSAJE DE AVISO DE BLOQUEO ---
+        self.label_aviso_bloqueo = ctk.CTkLabel(
+            self, 
+            text="", 
+            font=("Segoe UI", 11, "bold"), 
+            text_color="#ff4655" 
+        )
+        self.label_aviso_bloqueo.pack(pady=(5, 0))
+
         # Botón Aplicar Rojo
-        self.btn_aplicar = ctk.CTkButton(self, text="", fg_color="#ff4655", hover_color="#a12d36", height=50, font=("Segoe UI", 16, "bold"), command=self.aplicar)
+        self.btn_aplicar = ctk.CTkButton(
+            self, text="", fg_color="#ff4655", hover_color="#a12d36", 
+            height=50, font=("Segoe UI", 16, "bold"), command=self.aplicar
+        )
         self.btn_aplicar.pack(pady=15, padx=40, fill="x")
         self.btn_aplicar.bind("<Enter>", lambda e: self.btn_aplicar.configure(height=52, border_width=2, border_color="#ffffff"))
         self.btn_aplicar.bind("<Leave>", lambda e: self.btn_aplicar.configure(height=50, border_width=0))
@@ -400,6 +412,13 @@ class ValorantConfigApp(ctk.CTk):
             # El PDF muestra que usas 'crear_backup_manual' y 'restaurar_backup'
             self.btn_crear_bk.configure(command=self.crear_backup_manual, hover_color="#2563eb")
             self.btn_restaurar_bk.configure(command=self.restaurar_backup, hover_color="#2563eb")
+        # --- NUEVA LÓGICA DE AVISO VISUAL ---
+        if esta_bloqueado:
+            msg = ("⚠️ OPCIONES BLOQUEADAS: Desactiva 'Bloquear archivo' para modificar.") if self.lang == "ES" else (
+                   "⚠️ OPTIONS LOCKED: Deactivate 'Lock File' to make changes.")
+            self.label_aviso_bloqueo.configure(text=msg)
+        else:
+            self.label_aviso_bloqueo.configure(text="")
 
     # --- RESTO DE LÓGICA (backup, aplicar, ayuda...) ---
     def aplicar(self):
