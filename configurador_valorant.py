@@ -136,6 +136,10 @@ class ValorantConfigApp(ctk.CTk):
     # --- LÍNEA PARA EL ESTADO INICIAL ---
         self.actualizar_estado_interfaz()
 
+        self.archivo_cache_fps = ""
+        if self.ruta_ini:
+            self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
+
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
@@ -176,8 +180,80 @@ class ValorantConfigApp(ctk.CTk):
         
         if os.path.exists(nueva_ruta):
             self.ruta_ini = nueva_ruta
+            
+            # --- AGREGAR ESTA LÍNEA AQUÍ ---
+            # Actualiza la ruta del JSON de backup para la cuenta seleccionada
+            self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
+            
             self.leer_datos_actuales() # Recarga la resolución de esa cuenta
 
+    # --- NUEVA FUNCIÓN PARA ACTUALIZAR LA RUTA ---
+    def cambiar_de_cuenta_manual(self, cuenta_seleccionada):
+        """Cambia la ruta del archivo .ini según la cuenta seleccionada."""
+        import os
+        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
+        nueva_ruta = os.path.join(ruta_base, cuenta_seleccionada, "WindowsClient", "GameUserSettings.ini")
+        
+        if os.path.exists(nueva_ruta):
+            self.ruta_ini = nueva_ruta
+            # Actualiza la ruta del JSON de backup para la cuenta seleccionada
+            self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
+            self.leer_datos_actuales()
+
+    # --- AGREGAR AQUÍ LA NUEVA FUNCIÓN ---
+    def toggle_ultra_fps(self):
+        import configparser
+        import json
+        import os
+
+        if not self.ruta_ini or not os.path.exists(self.ruta_ini):
+            return
+
+        config = configparser.ConfigParser()
+        # IMPORTANTE: Evita que convierta todo a minúsculas y duplique líneas
+        config.optionxform = str 
+        config.read(self.ruta_ini)
+        
+        section = 'ScalabilityGroups'
+        parametros = [
+            "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality",
+            "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality",
+            "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
+            "sg.ReflectionQuality"
+        ]
+
+        if self.switch_fps.get() == 1:  # ACTIVAR
+            originales = {}
+            if not config.has_section(section):
+                config.add_section(section)
+            
+            for p in parametros:
+                # Guardamos el valor actual exacto antes de ponerlo en 0
+                originales[p] = config.get(section, p, fallback="3")
+                config.set(section, p, "0")
+            
+            # Guardamos el backup JSON
+            with open(self.archivo_cache_fps, "w") as jf:
+                json.dump(originales, jf)
+        
+        else:  # DESACTIVAR
+            if os.path.exists(self.archivo_cache_fps):
+                with open(self.archivo_cache_fps, "r") as jf:
+                    originales = json.load(jf)
+                
+                if not config.has_section(section):
+                    config.add_section(section)
+                
+                for p, valor in originales.items():
+                    config.set(section, p, str(valor))
+                
+                # Borramos el JSON tras restaurar
+                try: os.remove(self.archivo_cache_fps)
+                except: pass
+
+        # Guardar sin espacios adicionales para mantener el formato de Riot
+        with open(self.ruta_ini, 'w') as f:
+            config.write(f, space_around_delimiters=False)
 
     # --- LÓGICA DE DETECCIÓN ORIGINAL ---
     def obtener_ruta_activa(self):
@@ -383,7 +459,7 @@ class ValorantConfigApp(ctk.CTk):
         # Switches Opciones
         self.frame_avanzado = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_avanzado.pack(pady=10, padx=40, fill="x")
-        self.switch_fps = ctk.CTkSwitch(self.frame_avanzado, text="")
+        self.switch_fps = ctk.CTkSwitch(self.frame_avanzado, text="", command=self.toggle_ultra_fps)
         self.switch_fps.pack(side="left", padx=(10, 2))
         self.btn_help_fps = ctk.CTkButton(self.frame_avanzado, text="?", width=18, height=18, corner_radius=9, fg_color="#334155", command=lambda: self.mostrar_ayuda("fps"))
         self.btn_help_fps.pack(side="left", padx=(0, 20))
