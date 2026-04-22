@@ -122,7 +122,7 @@ class ValorantConfigApp(ctk.CTk):
         self.crear_acceso_directo_inicio()
 
     # --- LÍNEA PARA EL REFRESCO ---
-        self.bind("<FocusIn>", lambda e: self.leer_datos_actuales())
+    #    self.bind("<FocusIn>", lambda e: self.leer_datos_actuales())
     # --- LÍNEA PARA EL ESTADO INICIAL ---
         self.actualizar_estado_interfaz()
 
@@ -204,26 +204,27 @@ class ValorantConfigApp(ctk.CTk):
         self.top_frame.pack(anchor="ne", padx=20, pady=10)
 
         # Cargar imagen de refresco
-        #try:
+        try:
             # Bajamos un poco el tamaño a 16x16 para que no se vea tosco
-         #   img_refresh = ctk.CTkImage(light_image=Image.open("refresh.png"), 
-                          #            dark_image=Image.open("refresh.png"), 
-                             #         size=(16, 16))
-        ##   img_refresh = None
+            img_refresh = ctk.CTkImage(light_image=Image.open("refresh.png"), 
+                                      dark_image=Image.open("refresh.png"), 
+                                      size=(16, 16))
+        except Exception:
+            img_refresh = None
 
         # Botón de refresco (Estilo minimalista)
-         # self.btn_refresh = ctk.CTkButton(
-           #   self.top_frame, 
-           #   image=img_refresh,
-          #    text="", 
-          #    width=32, # Cuadrado perfecto
-           #   height=32,
-         #     corner_radius=16, # Lo hace circular
-          #    fg_color="transparent", 
-           #   hover_color="#333333",
-           #   command=self.leer_datos_actuales
-       #   )
-      #    self.btn_refresh.pack(side="left", padx=(0, 5))
+        self.btn_refresh = ctk.CTkButton(
+              self.top_frame, 
+              image=img_refresh,
+              text="", 
+              width=32, # Cuadrado perfecto
+              height=32,
+              corner_radius=16, # Lo hace circular
+              fg_color="transparent", 
+              hover_color="#333333",
+              command=self.leer_datos_actuales
+          )
+        self.btn_refresh.pack(side="left", padx=(0, 5))
 
         # Botón cambio idioma
         self.switch_lang = ctk.CTkSwitch(

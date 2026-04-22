@@ -2,8 +2,5 @@ build/
 dist/
 *.spec
 *.pfx
-<<<<<<< HEAD
-=======
-*.pdf
 *.txt
->>>>>>> develop
+*.pdf
