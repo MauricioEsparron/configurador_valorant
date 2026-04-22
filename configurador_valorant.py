@@ -63,7 +63,7 @@ class ValorantConfigApp(ctk.CTk):
                 "sugeridas": "Resoluciones sugeridas:",
                 "btn_aplicar": "APLICAR CONFIGURACIÓN",
                 "footer": "Cierra el juego antes de aplicar los cambios",
-                "creditos": "Developed by Mauricio Ramirez | 16/04/2026 | v1.1.0",
+                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
                 "combo_init": "Seleccionar resolución...",
                 "boost": "Impulso FPS Ultra",
                 "bloquear": "Bloquear archivo (Anti-Reversión)",
@@ -72,7 +72,7 @@ class ValorantConfigApp(ctk.CTk):
                 "btn_restaurar_bk": "VOLVER A ANTERIOR",
                 "exito": "¡Configuración aplicada!\nResolución: {}x{}\nCalidad 3D: {}%",
                 "help_boost": "Fuerza parámetros gráficos ultra bajos que no están disponibles en los menús normales del juego, los cambios se aplicaran en: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTA: se definiran los valores en 0.",
-                "help_lock": "Pone el archivo en 'Solo Lectura' para que Valorant no borre tus configuraciones en futuras actualizaciones.",
+                "help_lock": "Pone el archivo en 'Solo Lectura' para que Valorant no cambie tus configuraciones cuando cierres el juego. \n\n⚠️ RECOMENDACIÓN: Desactiva esta opción durante actualizaciones de Valorant para evitar errores de parcheo.",
                 "bk_exito": "Backup creado con éxito.",
                 "bk_restaurado": "Se ha regresado a la versión guardada.",
                 "bk_no_existe": "No hay versiones guardadas.",
@@ -95,7 +95,7 @@ class ValorantConfigApp(ctk.CTk):
                 "sugeridas": "Suggested resolutions:",
                 "btn_aplicar": "APPLY CONFIGURATION",
                 "footer": "Close the game before applying changes",
-                "creditos": "Developed by Mauricio Ramirez | 16/04/2026 | v1.1.0", # <--- NUEVO
+                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
                 "combo_init": "Select resolution...",
                 "boost": "Ultra FPS Boost",
                 "bloquear": "Lock File (Read Only)",
@@ -104,7 +104,7 @@ class ValorantConfigApp(ctk.CTk):
                 "btn_restaurar_bk": "RETURN TO PREVIOUS",
                 "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
                 "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: All values will be set to 0.",
-                "help_lock": "Sets file to Read Only to prevent resets.",
+                "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
                 "bk_exito": "Backup created successfully.",
                 "bk_restaurado": "Returned to previous version.",
                 "bk_no_existe": "No previous backup found.",
@@ -504,7 +504,7 @@ class ValorantConfigApp(ctk.CTk):
     def setup_ui(self):
         # Contenedor superior con alineación mejorada
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.top_frame.pack(anchor="ne", padx=15, pady=10)
+        self.top_frame.pack(anchor="ne", padx=15, pady=(10, 0))
 
         # Cargar imagen de refresco
         try:
@@ -541,7 +541,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # Título y Estado
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
-        self.label_titulo.pack(pady=2)
+        self.label_titulo.pack(pady=(0, 5))
         # Contenedor centrado (Sin expandir al 100% del ancho)
         self.frame_cuenta_linea = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_cuenta_linea.pack(pady=5) # Quitamos el fill="x" para que no se pegue a los bordes
@@ -667,10 +667,11 @@ class ValorantConfigApp(ctk.CTk):
 
         # Switches Opciones
         self.frame_avanzado = ctk.CTkFrame(self, fg_color="transparent")
-        self.frame_avanzado.pack(pady=10, padx=40, fill="x")
+        self.frame_avanzado.pack(pady=(10, 0), padx=40, fill="x")
         self.switch_fps = ctk.CTkSwitch(self.frame_avanzado, text="", command=self.toggle_ultra_fps)
         self.switch_fps.pack(side="left", padx=(10, 2))
         self.btn_help_fps = ctk.CTkButton(self.frame_avanzado, text="?", width=18, height=18, corner_radius=9, fg_color="#334155", command=lambda: self.mostrar_ayuda("fps"))
+        self.btn_help_fps.pack(side="left", padx=(0, 20))
         self.btn_help_fps.pack(side="left", padx=(0, 20))
         self.switch_read_only = ctk.CTkSwitch(self.frame_avanzado, text="", command=self.toggle_lock)
         self.switch_read_only.pack(side="left", padx=(10, 2))
@@ -684,16 +685,7 @@ class ValorantConfigApp(ctk.CTk):
             font=("Segoe UI", 11, "bold"), 
             text_color="#ff4655" 
         ) 
-        self.label_aviso_bloqueo.pack(pady=(5, 0))
-
-        # --- MENSAJE DE AVISO DE BLOQUEO ---
-        self.label_aviso_bloqueo = ctk.CTkLabel(
-            self, 
-            text="", 
-            font=("Segoe UI", 11, "bold"), 
-            text_color="#ff4655" 
-        )
-        self.label_aviso_bloqueo.pack(pady=(5, 0))
+        self.label_aviso_bloqueo.pack(pady=(2, 0))
 
         # Botón Aplicar Rojo
         self.btn_aplicar = ctk.CTkButton(
@@ -908,17 +900,14 @@ class ValorantConfigApp(ctk.CTk):
             if self.switch_read_only.get():
                 mode = os.stat(self.ruta_ini).st_mode
                 os.chmod(self.ruta_ini, mode & ~stat.S_IWRITE)
-
-            try:
-                # CORRECCIÓN: Ahora solo cambia la resolución si el Checkbox está marcado
+            try: 
+                # solo cambia la resolución si el Checkbox está marcado
                 if self.check_res_windows.get() == 1:
                     res_x = int(x)
                     res_y = int(y)
                     self.cambiar_res_windows(res_x, res_y)
-                else:
-                    print("Sincronización de Windows saltada (Checkbox desmarcado).")
             except Exception:
-                pass 
+                pass
 
             # 5. LÓGICA DE MENSAJE INTELIGENTE
             cambios = []
@@ -1048,63 +1037,50 @@ class ValorantConfigApp(ctk.CTk):
             messagebox.showwarning("Aviso", "No se encontró el archivo de configuración.")
 
     def cambiar_res_windows(self, ancho, alto):
-        """Cambia la resolución del escritorio de Windows de forma efectiva."""
+        """Cambia la resolución del escritorio de Windows con notificaciones visuales."""
         try:
             import ctypes
-            
-            # Definición exacta de la estructura DEVMODE para Windows API
+            from tkinter import messagebox
+            t = self.idiomas[self.lang]
+
             class DEVMODE(ctypes.Structure):
                 _fields_ = [
-                    ("dmDeviceName", ctypes.c_wchar * 32),
-                    ("dmSpecVersion", ctypes.c_ushort),
-                    ("dmDriverVersion", ctypes.c_ushort),
-                    ("dmSize", ctypes.c_ushort),
-                    ("dmDriverExtra", ctypes.c_ushort),
-                    ("dmFields", ctypes.c_uint),
-                    ("dmOrientation", ctypes.c_short),
-                    ("dmPaperSize", ctypes.c_short),
-                    ("dmPaperLength", ctypes.c_short),
-                    ("dmPaperWidth", ctypes.c_short),
-                    ("dmScale", ctypes.c_short),
-                    ("dmCopies", ctypes.c_short),
-                    ("dmDefaultSource", ctypes.c_short),
-                    ("dmPrintQuality", ctypes.c_short),
-                    ("dmColor", ctypes.c_short),
-                    ("dmDuplex", ctypes.c_short),
-                    ("dmYResolution", ctypes.c_short),
-                    ("dmTTOption", ctypes.c_short),
-                    ("dmCollate", ctypes.c_short),
-                    ("dmFormName", ctypes.c_wchar * 32),
-                    ("dmLogPixels", ctypes.c_ushort),
-                    ("dmBitsPerPel", ctypes.c_uint),
-                    ("dmPelsWidth", ctypes.c_uint),
-                    ("dmPelsHeight", ctypes.c_uint),
-                    ("dmDisplayFlags", ctypes.c_uint),
-                    ("dmDisplayFrequency", ctypes.c_uint),
+                    ("dmDeviceName", ctypes.c_wchar * 32), ("dmSpecVersion", ctypes.c_ushort),
+                    ("dmDriverVersion", ctypes.c_ushort), ("dmSize", ctypes.c_ushort),
+                    ("dmDriverExtra", ctypes.c_ushort), ("dmFields", ctypes.c_uint),
+                    ("dmOrientation", ctypes.c_short), ("dmPaperSize", ctypes.c_short),
+                    ("dmPaperLength", ctypes.c_short), ("dmPaperWidth", ctypes.c_short),
+                    ("dmScale", ctypes.c_short), ("dmCopies", ctypes.c_short),
+                    ("dmDefaultSource", ctypes.c_short), ("dmPrintQuality", ctypes.c_short),
+                    ("dmColor", ctypes.c_short), ("dmDuplex", ctypes.c_short),
+                    ("dmYResolution", ctypes.c_short), ("dmTTOption", ctypes.c_short),
+                    ("dmCollate", ctypes.c_short), ("dmFormName", ctypes.c_wchar * 32),
+                    ("dmLogPixels", ctypes.c_ushort), ("dmBitsPerPel", ctypes.c_uint),
+                    ("dmPelsWidth", ctypes.c_uint), ("dmPelsHeight", ctypes.c_uint),
+                    ("dmDisplayFlags", ctypes.c_uint), ("dmDisplayFrequency", ctypes.c_uint),
                 ]
 
             user32 = ctypes.windll.user32
             dm = DEVMODE()
             dm.dmSize = ctypes.sizeof(DEVMODE)
-            
-            # Obtener la configuración actual para no perder frecuencia (Hz) ni colores
+
             if user32.EnumDisplaySettingsW(None, -1, ctypes.byref(dm)):
                 dm.dmPelsWidth = int(ancho)
                 dm.dmPelsHeight = int(alto)
-                # DM_PELSWIDTH = 0x80000 | DM_PELSHEIGHT = 0x100000
                 dm.dmFields = 0x00080000 | 0x00100000
                 
-                # Intentar aplicar el cambio
-    # Esto hace que el cambio se registre en el sistema de forma oficial
+                # Aplicamos el cambio (1 = Permanente/Registro)
                 resultado = user32.ChangeDisplaySettingsW(ctypes.byref(dm), 1)
                 
-                if resultado == 0:
-                    print(f"✅ Escritorio cambiado a {ancho}x{alto}")
-                else:
-                    print(f"❌ Windows rechazó la resolución {ancho}x{alto}. Código: {resultado}")
+                if resultado != 0:
+                    # Si falla, avisamos al usuario con una ventana
+                    error_msg = f"Windows rejected {ancho}x{alto}. Code: {resultado}" if self.lang == "EN" else f"Windows rechazó {ancho}x{alto}. Código: {resultado}"
+                    messagebox.showwarning("Windows Display", error_msg)
+                # Nota: El mensaje de éxito ya se muestra en la función aplicar() consolidado.
+                    
         except Exception as e:
-            print(f"⚠️ Error crítico al cambiar resolución: {e}")
-
+            from tkinter import messagebox
+            messagebox.showerror("System Error", f"Error: {str(e)}")
 
 if __name__ == "__main__":
     app = ValorantConfigApp()
