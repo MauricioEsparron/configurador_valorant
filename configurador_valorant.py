@@ -80,7 +80,9 @@ class ValorantConfigApp(ctk.CTk):
                     "1920x1440 (Alta / 2K)", "1600x1200 (Alta / Estándar)", "1440x1080 (Ideal para monitores 1080p)",
                     "1280x960 (Equilibrada / Popular)", "1152x864 (Calidad Media)", "1024x768 (Baja / +Rendimiento FPS)",
                     "800x600 (Extrema / PC de bajos recursos)", "640x480 (Mínima)"
-                ]
+                ],
+                "res_win": "Sincro. Win",
+                "help_res": "Cambia la resolución de tu escritorio para que coincida con la del juego. Esto evita el parpadeo negro al hacer Alt+Tab.",
             },
             "EN": {
                 "titulo": "VALORANT 4:3 CONFIG",
@@ -110,7 +112,9 @@ class ValorantConfigApp(ctk.CTk):
                     "1920x1440 (High / 2K)", "1600x1200 (High / Standard)", "1440x1080 (Ideal for 1080p monitors)",
                     "1280x960 (Balanced / Popular)", "1152x864 (Medium Quality)", "1024x768 (Low / +FPS Performance)",
                     "800x600 (Extreme / Low-end PC)", "640x480 (Minimum)"
-                ]
+                ],
+                "res_win": "Sync Windows",
+                "help_res": "Changes your desktop resolution to match the game. This prevents the black screen flicker when Alt-Tabbing.",
             }
         }
 
@@ -591,24 +595,55 @@ class ValorantConfigApp(ctk.CTk):
         self.label_res_p = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
         self.label_res_p.pack(pady=(10, 5))
         
+        # --- SECCIÓN DE RESOLUCIÓN (ESTILO ORIGINAL CON CHECKBOX EN LÍNEA) ---
         self.frame_inputs = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_inputs.pack(pady=5)
+
+        # Fila 0: Ancho (X)
         self.label_x_text = ctk.CTkLabel(self.frame_inputs, text="", font=("Segoe UI", 12))
-        self.label_x_text.grid(row=0, column=0, padx=5, sticky="e")
+        self.label_x_text.grid(row=0, column=0, padx=5, sticky="e") # Volvemos al sticky="e"
         self.entry_x = ctk.CTkEntry(self.frame_inputs, width=120, validate="key", validatecommand=vcmd)
         self.entry_x.grid(row=0, column=1, pady=5)
         self.label_detect_x = ctk.CTkLabel(self.frame_inputs, text="", font=("Segoe UI", 10), text_color="#94a3b8")
         self.label_detect_x.grid(row=0, column=2, padx=10, sticky="w")
 
+        # Fila 1: Alto (Y)
         self.label_y_text = ctk.CTkLabel(self.frame_inputs, text="", font=("Segoe UI", 12))
-        self.label_y_text.grid(row=1, column=0, padx=5, sticky="e")
+        self.label_y_text.grid(row=1, column=0, padx=5, sticky="e") # Volvemos al sticky="e"
         self.entry_y = ctk.CTkEntry(self.frame_inputs, width=120, validate="key", validatecommand=vcmd)
         self.entry_y.grid(row=1, column=1, pady=5)
         self.label_detect_y = ctk.CTkLabel(self.frame_inputs, text="", font=("Segoe UI", 10), text_color="#94a3b8")
         self.label_detect_y.grid(row=1, column=2, padx=10, sticky="w")
 
+        # Contenedor lateral para el Checkbox y Ayuda (Ocupa las dos filas)
+        self.frame_extra_win = ctk.CTkFrame(self.frame_inputs, fg_color="transparent")
+        self.frame_extra_win.grid(row=0, column=3, rowspan=2, padx=(15, 0), sticky="ns")
+
+        # --- AQUÍ ESTÁ EL CAMBIO PARA QUE ESTÉN A LA PAR ---
+        self.frame_check_horizontal = ctk.CTkFrame(self.frame_extra_win, fg_color="transparent")
+        self.frame_check_horizontal.pack(expand=True) # Centra verticalmente en el bloque
+
+        self.check_res_windows = ctk.CTkCheckBox(
+            self.frame_check_horizontal, 
+            text="", 
+            width=20, height=20,
+            checkbox_width=18, checkbox_height=18,
+            fg_color="#ff4655", hover_color="#a12d36"
+        )
+        self.check_res_windows.pack(side="left") # Checkbox a la izquierda
+
+        self.btn_help_res = ctk.CTkButton(
+            self.frame_check_horizontal, 
+            text="?", width=18, height=18, corner_radius=9, 
+            fg_color="#334155", 
+            command=lambda: self.mostrar_ayuda("res_win")
+        )
+        self.btn_help_res.pack(side="left", padx=(5, 0)) # Botón "?" justo al lado
+
         self.label_sug = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
         self.label_sug.pack(pady=(10, 5))
+
+        # ComboBox de resoluciones (el que ya tenías)
         self.combo_res = ctk.CTkComboBox(self, width=350, state="readonly", command=self.on_combo_change)
         self.combo_res.pack(pady=10)
 
@@ -641,6 +676,15 @@ class ValorantConfigApp(ctk.CTk):
         self.switch_read_only.pack(side="left", padx=(10, 2))
         self.btn_help_lock = ctk.CTkButton(self.frame_avanzado, text="?", width=18, height=18, corner_radius=9, fg_color="#334155", command=lambda: self.mostrar_ayuda("lock"))
         self.btn_help_lock.pack(side="left")
+
+        # --- MENSAJE DE AVISO DE BLOQUEO --- 
+        self.label_aviso_bloqueo = ctk.CTkLabel( 
+            self, 
+            text="", 
+            font=("Segoe UI", 11, "bold"), 
+            text_color="#ff4655" 
+        ) 
+        self.label_aviso_bloqueo.pack(pady=(5, 0))
 
         # --- MENSAJE DE AVISO DE BLOQUEO ---
         self.label_aviso_bloqueo = ctk.CTkLabel(
@@ -688,8 +732,9 @@ class ValorantConfigApp(ctk.CTk):
         self.label_calidad.configure(text=t["calidad_res"]), self.switch_fps.configure(text=t["boost"]), self.switch_read_only.configure(text=t["bloquear"])
         self.label_footer.configure(text=t["footer"]), self.label_creditos.configure(text=t["creditos"])
         self.combo_res.configure(values=t["opciones"])
-        if self.combo_res.get() in ["", "CTkComboBox"]: self.combo_res.set(t["combo_init"])
-              # --- BLOQUE ACTUALIZADO PARA SELECTOR DE CUENTAS ---
+        self.check_res_windows.configure(text=t["res_win"])
+        if self.combo_res.get() in ["", "CTkComboBox"]: self.combo_res.set(t["combo_init"])      
+        # --- SELECTOR DE CUENTAS ---
         t = self.idiomas[self.lang]
         if self.ruta_ini:
             # Extraer ID de la carpeta
@@ -864,6 +909,17 @@ class ValorantConfigApp(ctk.CTk):
                 mode = os.stat(self.ruta_ini).st_mode
                 os.chmod(self.ruta_ini, mode & ~stat.S_IWRITE)
 
+            try:
+                # CORRECCIÓN: Ahora solo cambia la resolución si el Checkbox está marcado
+                if self.check_res_windows.get() == 1:
+                    res_x = int(x)
+                    res_y = int(y)
+                    self.cambiar_res_windows(res_x, res_y)
+                else:
+                    print("Sincronización de Windows saltada (Checkbox desmarcado).")
+            except Exception:
+                pass 
+
             # 5. LÓGICA DE MENSAJE INTELIGENTE
             cambios = []
             if f"ResolutionSizeX={x}" not in contenido_original or f"ResolutionSizeY={y}" not in contenido_original:
@@ -888,13 +944,6 @@ class ValorantConfigApp(ctk.CTk):
             if self.switch_read_only.get() and (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE):
                 cambios.append(f"• {t['bloquear']}: ✅")
 
-            try:
-                res_x = int(self.entry_x.get())
-                res_y = int(self.entry_y.get())
-                self.cambiar_res_windows(res_x, res_y)
-            except Exception:
-                pass # Si falla el escritorio, al menos el archivo .ini sí se guardó
-
             # Mostrar mensaje según cantidad de cambios
             if len(cambios) == 1:
                 cuerpo = "Se realizó un cambio:" if self.lang == "ES" else "One change was made:"
@@ -918,12 +967,20 @@ class ValorantConfigApp(ctk.CTk):
     def mostrar_ayuda(self, tipo):
         """Muestra la ayuda detallada según el botón presionado."""
         t = self.idiomas[self.lang]
-        titulo = t["boost"] if tipo == "fps" else t["bloquear"]
-        msg = t["help_boost"] if tipo == "fps" else t["help_lock"]
+        
+        # Lógica para elegir el título y mensaje según el tipo
+        if tipo == "fps":
+            titulo = t["boost"]
+            msg = t["help_boost"]
+        elif tipo == "lock":
+            titulo = t["bloquear"]
+            msg = t["help_lock"]
+        elif tipo == "res_win": # <--- NUEVO CASO PARA WINDOWS
+            titulo = t["res_win"]
+            msg = t["help_res"]
         
         from tkinter import messagebox
         messagebox.showinfo(titulo, msg)
-
 
     def crear_backup_manual(self):
         if self.ruta_ini:
