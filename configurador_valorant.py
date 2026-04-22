@@ -33,7 +33,7 @@ class ValorantConfigApp(ctk.CTk):
         super().__init__()
         
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("550x720") 
+        self.geometry("570x720") 
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -114,11 +114,21 @@ class ValorantConfigApp(ctk.CTk):
         }
 
         self.lang = "ES"
+        
+         # 1. Primero creamos la interfaz
+        self.setup_ui() 
+
+         # 2. Obtenemos la cuenta inicial (la última activa)
+        # Asegúrate de que obtener_ruta_activa() siga existiendo o usa la nueva lógica
         self.ruta_ini = self.obtener_ruta_activa()
         
-        self.setup_ui()
+         # 3. Aplicamos el idioma (ahora ya existe label_cuenta_fija y combo_cuentas)
         self.cambiar_idioma() 
+
+        # 4. Cargamos los datos en los inputs
         self.leer_datos_actuales()
+
+        # 5. Creamos acceso directo (si no existe)
         self.crear_acceso_directo_inicio()
 
     # --- LÍNEA PARA EL REFRESCO ---
@@ -129,6 +139,45 @@ class ValorantConfigApp(ctk.CTk):
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
+
+    # --- NUEVA FUNCIÓN PARA EL SELECTOR DE CUENTAS ---
+    def obtener_todas_las_cuentas(self):
+        """Busca todas las carpetas de cuentas y detecta la última activa."""
+        import os
+        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
+        cuentas = []
+        cuenta_actual = ""
+        
+        if os.path.exists(ruta_base):
+            for nombre in os.listdir(ruta_base):
+                ruta_folder = os.path.join(ruta_base, nombre)
+                if os.path.isdir(ruta_folder) and "-" in nombre and "Windows" not in nombre and "CrashReport" not in nombre:
+                    cuentas.append(nombre)
+        
+        ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
+        if os.path.exists(ruta_riot):
+            try:
+                import configparser
+                cp = configparser.ConfigParser()
+                cp.read(ruta_riot)
+                if 'General' in cp and 'LastPlayedUser' in cp['General']:
+                    cuenta_actual = cp['General']['LastPlayedUser']
+            except:
+                pass
+
+        return cuentas, cuenta_actual
+
+    # --- NUEVA FUNCIÓN PARA ACTUALIZAR LA RUTA ---
+    def cambiar_de_cuenta_manual(self, cuenta_seleccionada):
+        """Cambia la ruta del archivo .ini según la cuenta seleccionada."""
+        import os
+        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
+        nueva_ruta = os.path.join(ruta_base, cuenta_seleccionada, "WindowsClient", "GameUserSettings.ini")
+        
+        if os.path.exists(nueva_ruta):
+            self.ruta_ini = nueva_ruta
+            self.leer_datos_actuales() # Recarga la resolución de esa cuenta
+
 
     # --- LÓGICA DE DETECCIÓN ORIGINAL ---
     def obtener_ruta_activa(self):
@@ -201,14 +250,14 @@ class ValorantConfigApp(ctk.CTk):
     def setup_ui(self):
         # Contenedor superior con alineación mejorada
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.top_frame.pack(anchor="ne", padx=20, pady=10)
+        self.top_frame.pack(anchor="ne", padx=15, pady=10)
 
         # Cargar imagen de refresco
         try:
             # Bajamos un poco el tamaño a 16x16 para que no se vea tosco
             img_refresh = ctk.CTkImage(light_image=Image.open("refresh.png"), 
                                       dark_image=Image.open("refresh.png"), 
-                                      size=(16, 16))
+                                      size=(20, 18))
         except Exception:
             img_refresh = None
 
@@ -239,14 +288,53 @@ class ValorantConfigApp(ctk.CTk):
         # Título y Estado
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
         self.label_titulo.pack(pady=2)
+        # Contenedor centrado (Sin expandir al 100% del ancho)
+        self.frame_cuenta_linea = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_cuenta_linea.pack(pady=5) # Quitamos el fill="x" para que no se pegue a los bordes
 
-        # Modifica estas líneas para habilitar el link:
-        self.label_estado = ctk.CTkLabel(self, text="", font=("Segoe UI", 12))
-        self.label_estado.pack(pady=2)
-        
-        # --- AGREGAR ESTO ---
-        self.label_estado.configure(cursor="hand2") # Cambia el cursor a una mano
-        self.label_estado.bind("<Button-1>", self.abrir_archivo_config) # Evento de clic
+        # Parte 1: El texto
+        self.label_cuenta_fija = ctk.CTkLabel(
+            self.frame_cuenta_linea, 
+            text="", 
+            font=("Segoe UI", 12, "bold")
+        )
+        self.label_cuenta_fija.pack(side="left", padx=(0, 10))
+
+        # Configuración de eventos
+        self.label_cuenta_fija.configure(cursor="hand2")
+        self.label_cuenta_fija.bind("<Button-1>", self.abrir_archivo_config)
+
+        # --- EFECTO DE TAMAÑO (HOVER) ---
+        # Al entrar: sube a tamaño 13
+     # Al entrar: Se mantiene en 12 pero resalta más
+        self.label_cuenta_fija.bind("<Enter>", lambda e: self.label_cuenta_fija.configure(
+            font=("Segoe UI", 12, "bold"), 
+            text_color="#005f52" # Cambia a blanco para un brillo extra
+        ))
+
+        # Al salir: Vuelve a su estado original
+        self.label_cuenta_fija.bind("<Leave>", lambda e: self.label_cuenta_fija.configure(
+            font=("Segoe UI", 12, "bold"), # O "normal" si prefieres que adelgace
+            text_color="#4ade80"
+        ))
+
+       # Parte 2: El ComboBox (Selector)
+        lista_cuentas, _ = self.obtener_todas_las_cuentas()
+        self.combo_cuentas = ctk.CTkComboBox(
+            self.frame_cuenta_linea,
+            values=lista_cuentas,
+            width=320,
+            height=28,
+            state="readonly",
+            command=self.cambiar_de_cuenta_manual,
+            fg_color="#1a1a1a",
+            border_color="#4ade80",
+            button_color="#4ade80",
+            text_color="#4ade80", 
+            # opciones al desplegar
+            dropdown_text_color="#4ade80" 
+        )
+        self.combo_cuentas.pack(side="left")
 
 
         vcmd = (self.register(self.validar_numeros), '%P')
@@ -351,20 +439,28 @@ class ValorantConfigApp(ctk.CTk):
         self.label_footer.configure(text=t["footer"]), self.label_creditos.configure(text=t["creditos"])
         self.combo_res.configure(values=t["opciones"])
         if self.combo_res.get() in ["", "CTkComboBox"]: self.combo_res.set(t["combo_init"])
+              # --- BLOQUE ACTUALIZADO PARA SELECTOR DE CUENTAS ---
+        t = self.idiomas[self.lang]
         if self.ruta_ini:
+            # Extraer ID de la carpeta
             nombre = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
-            # Solo cambiamos el texto, el color y ponemos la letra en BOLD
-            self.label_estado.configure(
-                text=f"{t['cuenta_ok']} {nombre}", 
+            
+            # Actualizamos la etiqueta con subrayado para indicar que es un link
+            self.label_cuenta_fija.configure(
+                text=t["cuenta_ok"], 
                 text_color="#4ade80",
-                font=("Segoe UI", 13, "bold") 
+                font=("Segoe UI", 12, "bold") # <--- Añadimos el subrayado
             )
-        else: 
-            self.label_estado.configure(
+            # Actualizamos el valor del combo
+            self.combo_cuentas.set(nombre)
+        else:
+            self.label_cuenta_fija.configure(
                 text=t["cuenta_no"], 
                 text_color="#f87171",
-                font=("Segoe UI", 12, "normal")
+                font=("Segoe UI", 12, "bold") # Sin subrayado si no hay cuenta
             )
+            self.combo_cuentas.set("")
+
     def actualizar_o_insertar(self, contenido, clave, valor, ancla=None):
         if re.search(rf'^{clave}=.*', contenido, re.MULTILINE):
             return re.sub(rf'^{clave}=.*', f'{clave}={valor}', contenido, flags=re.MULTILINE)
@@ -394,6 +490,34 @@ class ValorantConfigApp(ctk.CTk):
             self.after(500, lambda: setattr(self, 'bloqueo_en_progreso', False))
 
             self.actualizar_estado_interfaz() # <-- Añade esta línea al final
+
+    def obtener_todas_las_cuentas(self):
+        """Busca todas las carpetas de cuentas y detecta la última activa."""
+        import os
+        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
+        cuentas = []
+        cuenta_actual = ""
+        
+        # 1. Buscar todas las carpetas de cuentas
+        if os.path.exists(ruta_base):
+            for nombre in os.listdir(ruta_base):
+                ruta_folder = os.path.join(ruta_base, nombre)
+                if os.path.isdir(ruta_folder) and "-" in nombre and "Windows" not in nombre and "CrashReport" not in nombre:
+                    cuentas.append(nombre)
+        
+        # 2. Intentar detectar la cuenta activa por RiotLocalMachine
+        ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
+        if os.path.exists(ruta_riot):
+            try:
+                import configparser
+                cp = configparser.ConfigParser()
+                cp.read(ruta_riot)
+                if 'General' in cp and 'LastPlayedUser' in cp['General']:
+                    cuenta_actual = cp['General']['LastPlayedUser']
+            except:
+                pass
+
+        return cuentas, cuenta_actual
 
     def actualizar_estado_interfaz(self):
         """Bloquea funcionalidad y efecto hover manteniendo el diseño visual."""
@@ -598,12 +722,18 @@ class ValorantConfigApp(ctk.CTk):
 
     def abrir_archivo_config(self, event=None):
         """Abre el archivo GameUserSettings.ini con el editor de texto predeterminado."""
-        if self.ruta_ini and os.path.exists(self.ruta_ini):
+        import os
+        from tkinter import messagebox # <--- Asegura que esto esté aquí
+        
+        if hasattr(self, 'ruta_ini') and self.ruta_ini and os.path.exists(self.ruta_ini):
             try:
-                # os.startfile abre el archivo con el programa asociado (normalmente Bloc de Notas)
                 os.startfile(self.ruta_ini)
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo abrir el archivo: {e}")
+        else:
+            from tkinter import messagebox
+            messagebox.showwarning("Aviso", "No se encontró el archivo de configuración.")
+
 
 if __name__ == "__main__":
     app = ValorantConfigApp()
