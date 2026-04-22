@@ -236,10 +236,18 @@ class ValorantConfigApp(ctk.CTk):
         self.switch_lang.pack(side="left")
 
 
+        # Título y Estado
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
         self.label_titulo.pack(pady=2)
+
+        # Modifica estas líneas para habilitar el link:
         self.label_estado = ctk.CTkLabel(self, text="", font=("Segoe UI", 12))
         self.label_estado.pack(pady=2)
+        
+        # --- AGREGAR ESTO ---
+        self.label_estado.configure(cursor="hand2") # Cambia el cursor a una mano
+        self.label_estado.bind("<Button-1>", self.abrir_archivo_config) # Evento de clic
+
 
         vcmd = (self.register(self.validar_numeros), '%P')
         self.label_res_p = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
@@ -587,6 +595,15 @@ class ValorantConfigApp(ctk.CTk):
                 with open("tmp.vbs","w") as f: f.write(vbs)
                 os.system("cscript //nologo tmp.vbs"), os.remove("tmp.vbs")
             except: pass
+
+    def abrir_archivo_config(self, event=None):
+        """Abre el archivo GameUserSettings.ini con el editor de texto predeterminado."""
+        if self.ruta_ini and os.path.exists(self.ruta_ini):
+            try:
+                # os.startfile abre el archivo con el programa asociado (normalmente Bloc de Notas)
+                os.startfile(self.ruta_ini)
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo abrir el archivo: {e}")
 
 if __name__ == "__main__":
     app = ValorantConfigApp()
