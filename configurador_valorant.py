@@ -34,7 +34,7 @@ class ValorantConfigApp(ctk.CTk):
         super().__init__()
         
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("570x720") 
+        self.geometry("570x730") 
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -888,6 +888,13 @@ class ValorantConfigApp(ctk.CTk):
             if self.switch_read_only.get() and (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE):
                 cambios.append(f"• {t['bloquear']}: ✅")
 
+            try:
+                res_x = int(self.entry_x.get())
+                res_y = int(self.entry_y.get())
+                self.cambiar_res_windows(res_x, res_y)
+            except Exception:
+                pass # Si falla el escritorio, al menos el archivo .ini sí se guardó
+
             # Mostrar mensaje según cantidad de cambios
             if len(cambios) == 1:
                 cuerpo = "Se realizó un cambio:" if self.lang == "ES" else "One change was made:"
@@ -907,7 +914,6 @@ class ValorantConfigApp(ctk.CTk):
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror("Error", str(e))
-
 
     def mostrar_ayuda(self, tipo):
         """Muestra la ayuda detallada según el botón presionado."""
@@ -983,6 +989,64 @@ class ValorantConfigApp(ctk.CTk):
         else:
             from tkinter import messagebox
             messagebox.showwarning("Aviso", "No se encontró el archivo de configuración.")
+
+    def cambiar_res_windows(self, ancho, alto):
+        """Cambia la resolución del escritorio de Windows de forma efectiva."""
+        try:
+            import ctypes
+            
+            # Definición exacta de la estructura DEVMODE para Windows API
+            class DEVMODE(ctypes.Structure):
+                _fields_ = [
+                    ("dmDeviceName", ctypes.c_wchar * 32),
+                    ("dmSpecVersion", ctypes.c_ushort),
+                    ("dmDriverVersion", ctypes.c_ushort),
+                    ("dmSize", ctypes.c_ushort),
+                    ("dmDriverExtra", ctypes.c_ushort),
+                    ("dmFields", ctypes.c_uint),
+                    ("dmOrientation", ctypes.c_short),
+                    ("dmPaperSize", ctypes.c_short),
+                    ("dmPaperLength", ctypes.c_short),
+                    ("dmPaperWidth", ctypes.c_short),
+                    ("dmScale", ctypes.c_short),
+                    ("dmCopies", ctypes.c_short),
+                    ("dmDefaultSource", ctypes.c_short),
+                    ("dmPrintQuality", ctypes.c_short),
+                    ("dmColor", ctypes.c_short),
+                    ("dmDuplex", ctypes.c_short),
+                    ("dmYResolution", ctypes.c_short),
+                    ("dmTTOption", ctypes.c_short),
+                    ("dmCollate", ctypes.c_short),
+                    ("dmFormName", ctypes.c_wchar * 32),
+                    ("dmLogPixels", ctypes.c_ushort),
+                    ("dmBitsPerPel", ctypes.c_uint),
+                    ("dmPelsWidth", ctypes.c_uint),
+                    ("dmPelsHeight", ctypes.c_uint),
+                    ("dmDisplayFlags", ctypes.c_uint),
+                    ("dmDisplayFrequency", ctypes.c_uint),
+                ]
+
+            user32 = ctypes.windll.user32
+            dm = DEVMODE()
+            dm.dmSize = ctypes.sizeof(DEVMODE)
+            
+            # Obtener la configuración actual para no perder frecuencia (Hz) ni colores
+            if user32.EnumDisplaySettingsW(None, -1, ctypes.byref(dm)):
+                dm.dmPelsWidth = int(ancho)
+                dm.dmPelsHeight = int(alto)
+                # DM_PELSWIDTH = 0x80000 | DM_PELSHEIGHT = 0x100000
+                dm.dmFields = 0x00080000 | 0x00100000
+                
+                # Intentar aplicar el cambio
+    # Esto hace que el cambio se registre en el sistema de forma oficial
+                resultado = user32.ChangeDisplaySettingsW(ctypes.byref(dm), 1)
+                
+                if resultado == 0:
+                    print(f"✅ Escritorio cambiado a {ancho}x{alto}")
+                else:
+                    print(f"❌ Windows rechazó la resolución {ancho}x{alto}. Código: {resultado}")
+        except Exception as e:
+            print(f"⚠️ Error crítico al cambiar resolución: {e}")
 
 
 if __name__ == "__main__":
