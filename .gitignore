@@ -2,5 +2,5 @@ build/
 dist/
 *.spec
 *.pfx
-*.pdf
 *.txt
+*.pdf
