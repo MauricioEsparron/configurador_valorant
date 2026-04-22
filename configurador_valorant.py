@@ -7,6 +7,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 import sys
 import ctypes
+import json
 from PIL import Image, ImageTk
 
 
@@ -136,10 +137,18 @@ class ValorantConfigApp(ctk.CTk):
     # --- LÍNEA PARA EL ESTADO INICIAL ---
         self.actualizar_estado_interfaz()
 
+        # Configuración de backup FPS
         self.archivo_cache_fps = ""
         if self.ruta_ini:
             self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
 
+        # --- SOLUCIÓN AL ERROR: Definir la lista aquí ---
+        self.parametros_fps = [
+            "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality",
+            "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality",
+            "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
+            "sg.ReflectionQuality"
+        ]
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
@@ -200,60 +209,225 @@ class ValorantConfigApp(ctk.CTk):
             self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
             self.leer_datos_actuales()
 
-    # --- AGREGAR AQUÍ LA NUEVA FUNCIÓN ---
     def toggle_ultra_fps(self):
+        import os
         import configparser
         import json
-        import os
 
         if not self.ruta_ini or not os.path.exists(self.ruta_ini):
             return
 
-        config = configparser.ConfigParser()
-        # IMPORTANTE: Evita que convierta todo a minúsculas y duplique líneas
-        config.optionxform = str 
-        config.read(self.ruta_ini)
-        
-        section = 'ScalabilityGroups'
-        parametros = [
+        # Si el switch se activa (Posición 1)
+        if self.switch_fps.get() == 1:
+            # --- CRÍTICO: Solo creamos el backup si NO existe uno previo ---
+            # Esto evita que guardemos los "ceros" como si fueran valores originales
+            if not os.path.exists(self.archivo_cache_fps):
+                config = configparser.ConfigParser()
+                config.optionxform = str
+                config.read(self.ruta_ini)
+                
+                originales = {}
+                section = 'ScalabilityGroups'
+                
+                if config.has_section(section):
+                    for p in self.parametros_fps:
+                        originales[p] = config.get(section, p, fallback="3")
+                    
+                    # Guardamos el respaldo real
+                    with open(self.archivo_cache_fps, "w") as jf:
+                        json.dump(originales, jf)
+
+            # Una vez asegurado el backup, abrimos la ventana para elegir/personalizar
+            self.abrir_ventana_opciones_fps()
+
+        else:
+            # Si el switch se desactiva (Posición 0), restauramos
+            config = configparser.ConfigParser()
+            config.optionxform = str
+            config.read(self.ruta_ini)
+            
+            if os.path.exists(self.archivo_cache_fps):
+                with open(self.archivo_cache_fps, "r") as jf:
+                    originales = json.load(jf)
+                
+                section = 'ScalabilityGroups'
+                for p, valor in originales.items():
+                    config.set(section, p, str(valor))
+                
+                # Guardamos y eliminamos el backup
+                with open(self.ruta_ini, 'w') as f:
+                    config.write(f, space_around_delimiters=False)
+                
+                try: os.remove(self.archivo_cache_fps)
+                except: pass
+
+    def abrir_ventana_opciones_fps(self):
+        """Abre un popup para elegir entre configuración por defecto o personalizada."""
+        # Crear ventana secundaria modal
+        self.popup = ctk.CTkToplevel(self)
+        self.popup.title("Opciones de Impulso FPS")
+        self.popup.geometry("450x580")
+        self.popup.resizable(False, False)
+        self.popup.grab_set() # Bloquea la ventana principal hasta cerrar esta
+        self.popup.attributes("-topmost", True)
+
+        lbl_info = ctk.CTkLabel(self.popup, text="Elige el tipo de optimización:", font=("Segoe UI", 14, "bold"))
+        lbl_info.pack(pady=10)
+
+        # Frame para botones principales
+        frame_btns = ctk.CTkFrame(self.popup, fg_color="transparent")
+        frame_btns.pack(pady=5)
+
+        btn_defecto = ctk.CTkButton(frame_btns, text="Predeterminado (Todo en 0)", fg_color="#ff4655", hover_color="#a12d36",
+                                     command=self.aplicar_fps_defecto)
+        btn_defecto.pack(side="left", padx=10)
+
+        # Lista de parámetros para el modo personalizado
+        self.parametros_fps = [
             "sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality",
             "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality",
             "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
             "sg.ReflectionQuality"
         ]
-
-        if self.switch_fps.get() == 1:  # ACTIVAR
-            originales = {}
-            if not config.has_section(section):
-                config.add_section(section)
-            
-            for p in parametros:
-                # Guardamos el valor actual exacto antes de ponerlo en 0
-                originales[p] = config.get(section, p, fallback="3")
-                config.set(section, p, "0")
-            
-            # Guardamos el backup JSON
-            with open(self.archivo_cache_fps, "w") as jf:
-                json.dump(originales, jf)
         
-        else:  # DESACTIVAR
-            if os.path.exists(self.archivo_cache_fps):
-                with open(self.archivo_cache_fps, "r") as jf:
-                    originales = json.load(jf)
-                
-                if not config.has_section(section):
-                    config.add_section(section)
-                
-                for p, valor in originales.items():
-                    config.set(section, p, str(valor))
-                
-                # Borramos el JSON tras restaurar
-                try: os.remove(self.archivo_cache_fps)
-                except: pass
+        # Diccionario para guardar las cajas de texto
+        self.entries_fps = {}
 
-        # Guardar sin espacios adicionales para mantener el formato de Riot
+        # Frame contenedor para los inputs manuales
+        self.frame_manual = ctk.CTkFrame(self.popup, fg_color="#1a1a1a", border_width=1, border_color="#334155")
+        self.frame_manual.pack(pady=15, padx=20, fill="both", expand=True)
+
+        lbl_manual = ctk.CTkLabel(self.frame_manual, text="Configuración Personalizada (Valores 0 al 5)", font=("Segoe UI", 11, "bold"))
+        lbl_manual.pack(pady=5)
+
+        # Función de validación: Solo números enteros del 0 al 5
+        def validar_0_5(P):
+            if P == "": return True
+            if P.isdigit() and 0 <= int(P) <= 5: return True
+            return False
+        vcmd = (self.popup.register(validar_0_5), '%P')
+
+        # 1. Intentar cargar valores (Prioridad: 1. JSON de backup, 2. Archivo .ini actual)
+        valores_previuos = {}
+        
+        # Intentamos leer del JSON si ya existe un backup activo
+        if os.path.exists(self.archivo_cache_fps):
+            try:
+                with open(self.archivo_cache_fps, "r") as jf:
+                    valores_previuos = json.load(jf)
+            except:
+                pass
+        
+        # Si el JSON no existe o está vacío, leemos los valores REALES del .ini
+        if not valores_previuos and self.ruta_ini and os.path.exists(self.ruta_ini):
+            try:
+                import configparser
+                config_temp = configparser.ConfigParser()
+                config_temp.optionxform = str
+                config_temp.read(self.ruta_ini)
+                if config_temp.has_section('ScalabilityGroups'):
+                    for p in self.parametros_fps:
+                        # Extraemos lo que el usuario tiene configurado actualmente
+                        valores_previuos[p] = config_temp.get('ScalabilityGroups', p, fallback="3")
+            except:
+                pass
+
+        # 2. Generar los campos con los valores cargados
+        for p in self.parametros_fps:
+            row_frame = ctk.CTkFrame(self.frame_manual, fg_color="transparent")
+            row_frame.pack(fill="x", padx=10, pady=1)
+            
+            lbl_p = ctk.CTkLabel(row_frame, text=p.replace("sg.", ""), font=("Segoe UI", 10), width=150, anchor="w")
+            lbl_p.pack(side="left")
+            
+            entry_p = ctk.CTkEntry(row_frame, width=50, height=22, validate="key", validatecommand=vcmd)
+            
+            # --- LÓGICA DE CARGA ---
+            # Si el valor existe en el JSON, lo ponemos. Si no, ponemos "0"
+            valor_a_mostrar = valores_previuos.get(p, "0")
+            entry_p.insert(0, str(valor_a_mostrar))
+            
+            entry_p.pack(side="right")
+            self.entries_fps[p] = entry_p
+            # Botón Aplicar Personalizado con tamaño mejorado
+        btn_guardar_custom = ctk.CTkButton(
+            self.popup, 
+            text="APLICAR CONFIGURACIÓN PERSONALIZADA", # Texto más descriptivo
+            fg_color="#4ade80", 
+            hover_color="#22c55e", 
+            text_color="#000",
+            font=("Segoe UI", 12, "bold"),
+            height=40, # Más alto para que sea fácil de tocar
+            width=380, # Ancho casi total de la ventana
+            command=self.aplicar_fps_personalizado
+        )
+        btn_guardar_custom.pack(pady=20)
+
+
+        # Si el usuario cierra la ventana con la X sin elegir nada, apagamos el switch
+        def al_cerrar():
+            if self.switch_fps.get() == 1:
+                self.switch_fps.deselect()
+            self.popup.destroy()
+
+        # Vinculamos la X de la ventana a nuestra función al_cerrar
+        self.popup.protocol("WM_DELETE_WINDOW", al_cerrar)
+
+    def aplicar_fps_defecto(self):
+        """Aplica ceros a todos los valores (comportamiento original)."""
+        import configparser, json
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        config.read(self.ruta_ini)
+        
+        section = 'ScalabilityGroups'
+        originales = {}
+        
+        if not config.has_section(section):
+            config.add_section(section)
+            
+        for p in self.parametros_fps:
+            originales[p] = config.get(section, p, fallback="3")
+            config.set(section, p, "0")
+            
+        with open(self.archivo_cache_fps, "w") as jf:
+            json.dump(originales, jf)
+            
         with open(self.ruta_ini, 'w') as f:
             config.write(f, space_around_delimiters=False)
+            
+        self.popup.destroy()
+
+    def aplicar_fps_personalizado(self):
+        """Aplica los valores digitados por el usuario en la ventana."""
+        import configparser, json
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        config.read(self.ruta_ini)
+        
+        section = 'ScalabilityGroups'
+        originales = {}
+        
+        if not config.has_section(section):
+            config.add_section(section)
+            
+        for p in self.parametros_fps:
+            # Guardamos el original para el backup
+            originales[p] = config.get(section, p, fallback="3")
+            
+            # Obtenemos el valor de la caja de texto (si está vacío le ponemos 0)
+            valor_ingresado = self.entries_fps[p].get()
+            if valor_ingresado == "": valor_ingresado = "0"
+            
+            config.set(section, p, valor_ingresado)
+            
+        with open(self.archivo_cache_fps, "w") as jf:
+            json.dump(originales, jf)
+            
+        with open(self.ruta_ini, 'w') as f:
+            config.write(f, space_around_delimiters=False)
+            
+        self.popup.destroy()
 
     # --- LÓGICA DE DETECCIÓN ORIGINAL ---
     def obtener_ruta_activa(self):
