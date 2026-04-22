@@ -47,6 +47,7 @@ class ValorantConfigApp(ctk.CTk):
             self.img_github = ctk.CTkImage(light_image=Image.open(resource_path("github.png")), size=(28, 28))
             self.img_coffee = ctk.CTkImage(light_image=Image.open(resource_path("coffee.png")), size=(28, 28))
             self.img_stream = ctk.CTkImage(light_image=Image.open(resource_path("streamlabs.png")), size=(28, 28))
+            self.img_refresh = ctk.CTkImage(light_image=Image.open(resource_path("refresh.png")), size=(20, 18))
         except:
             self.img_github = self.img_coffee = self.img_stream = None
 
@@ -153,6 +154,9 @@ class ValorantConfigApp(ctk.CTk):
             "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality",
             "sg.ReflectionQuality"
         ]
+
+        self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
+
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
@@ -311,18 +315,26 @@ class ValorantConfigApp(ctk.CTk):
             return False
         vcmd = (self.popup.register(validar_0_5), '%P')
 
-        # 1. Intentar cargar valores (Prioridad: 1. JSON de backup, 2. Archivo .ini actual)
+       # 1. Intentar cargar valores (Prioridad: 1. Persistente, 2. JSON de backup, 3. Archivo .ini actual)
         valores_previuos = {}
-        
-        # Intentamos leer del JSON si ya existe un backup activo
-        if os.path.exists(self.archivo_cache_fps):
+
+        # --- NUEVA LÓGICA: Primero buscamos si hay un perfil guardado que nunca se borra ---
+        if self.archivo_custom_fps and os.path.exists(self.archivo_custom_fps):
+            try:
+                with open(self.archivo_custom_fps, "r") as jf:
+                    valores_previuos = json.load(jf)
+            except:
+                pass
+
+        # Si no hay perfil guardado (es la primera vez), buscamos en el backup temporal
+        if not valores_previuos and os.path.exists(self.archivo_cache_fps):
             try:
                 with open(self.archivo_cache_fps, "r") as jf:
                     valores_previuos = json.load(jf)
             except:
                 pass
-        
-        # Si el JSON no existe o está vacío, leemos los valores REALES del .ini
+
+        # Si nada de lo anterior existe, leemos los valores REALES del .ini
         if not valores_previuos and self.ruta_ini and os.path.exists(self.ruta_ini):
             try:
                 import configparser
@@ -331,7 +343,6 @@ class ValorantConfigApp(ctk.CTk):
                 config_temp.read(self.ruta_ini)
                 if config_temp.has_section('ScalabilityGroups'):
                     for p in self.parametros_fps:
-                        # Extraemos lo que el usuario tiene configurado actualmente
                         valores_previuos[p] = config_temp.get('ScalabilityGroups', p, fallback="3")
             except:
                 pass
@@ -403,7 +414,7 @@ class ValorantConfigApp(ctk.CTk):
         self.popup.destroy()
 
     def aplicar_fps_personalizado(self):
-        """Aplica los valores digitados por el usuario en la ventana."""
+        """Aplica los valores digitados por el usuario y los guarda permanentemente."""
         import configparser, json
         config = configparser.ConfigParser()
         config.optionxform = str
@@ -411,26 +422,35 @@ class ValorantConfigApp(ctk.CTk):
         
         section = 'ScalabilityGroups'
         originales = {}
-        
+        ajustes_a_guardar_para_siempre = {} # <--- Nueva memoria
+
         if not config.has_section(section):
             config.add_section(section)
-            
+        
         for p in self.parametros_fps:
-            # Guardamos el original para el backup
+            # 1. Guardamos el valor que tenía el juego antes (para poder volver atrás)
             originales[p] = config.get(section, p, fallback="3")
             
-            # Obtenemos el valor de la caja de texto (si está vacío le ponemos 0)
+            # 2. Obtenemos lo que tú escribiste en la ventana
             valor_ingresado = self.entries_fps[p].get()
             if valor_ingresado == "": valor_ingresado = "0"
             
+            # 3. Lo preparamos para guardarlo en la memoria y en el juego
+            ajustes_a_guardar_para_siempre[p] = valor_ingresado
             config.set(section, p, valor_ingresado)
-            
+
+        # --- AQUÍ ESTÁ EL CAMBIO CLAVE: Guardamos tus ajustes personalizados ---
+        with open(self.archivo_custom_fps, "w") as jf:
+            json.dump(ajustes_a_guardar_para_siempre, jf)
+
+        # Guardamos el backup de seguridad (el que se borra al apagar el switch)
         with open(self.archivo_cache_fps, "w") as jf:
             json.dump(originales, jf)
-            
+
+        # Aplicamos los cambios al archivo del juego
         with open(self.ruta_ini, 'w') as f:
             config.write(f, space_around_delimiters=False)
-            
+        
         self.popup.destroy()
 
     # --- LÓGICA DE DETECCIÓN ORIGINAL ---
@@ -506,27 +526,18 @@ class ValorantConfigApp(ctk.CTk):
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.top_frame.pack(anchor="ne", padx=15, pady=(10, 0))
 
-        # Cargar imagen de refresco
-        try:
-            # Bajamos un poco el tamaño a 16x16 para que no se vea tosco
-            img_refresh = ctk.CTkImage(light_image=Image.open("refresh.png"), 
-                                      dark_image=Image.open("refresh.png"), 
-                                      size=(20, 18))
-        except Exception:
-            img_refresh = None
-
-        # Botón de refresco (Estilo minimalista)
+        # Ya no cargamos la imagen aquí, usamos la que cargamos en el __init__
         self.btn_refresh = ctk.CTkButton(
-              self.top_frame, 
-              image=img_refresh,
-              text="", 
-              width=32, # Cuadrado perfecto
-              height=32,
-              corner_radius=16, # Lo hace circular
-              fg_color="transparent", 
-              hover_color="#333333",
-              command=self.leer_datos_actuales
-          )
+            self.top_frame,
+            image=self.img_refresh, # <--- Usamos la variable de la clase
+            text="" if self.img_refresh else "↻",
+            width=32,
+            height=32,
+            corner_radius=16,
+            fg_color="transparent",
+            hover_color="#333333",
+            command=self.leer_datos_actuales
+        )
         self.btn_refresh.pack(side="left", padx=(0, 5))
 
         # Botón cambio idioma
