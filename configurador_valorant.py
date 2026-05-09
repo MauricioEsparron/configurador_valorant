@@ -230,6 +230,100 @@ class ValorantConfigApp(ctk.CTk):
             self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
             self.leer_datos_actuales()
 
+    def cargar_alias(self):
+        """Carga los nombres personalizados desde un archivo JSON."""
+        import json
+        # Guardamos el JSON en la misma carpeta que el ejecutable
+        self.ruta_alias = os.path.join(os.path.abspath("."), "account_names.json")
+        if os.path.exists(self.ruta_alias):
+            try:
+                with open(self.ruta_alias, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
+
+    def guardar_alias(self, folder_id, nuevo_nombre):
+        """Guarda un nuevo alias vinculado a un ID de carpeta."""
+        import json
+        alias_dict = self.cargar_alias()
+        alias_dict[folder_id] = nuevo_nombre
+        with open(self.ruta_alias, "w", encoding="utf-8") as f:
+            json.dump(alias_dict, f, indent=4)
+
+    def abrir_ventana_alias(self):
+        import tkinter.messagebox as messagebox
+        
+        seleccion = self.combo_cuentas.get()
+        if not seleccion:
+            messagebox.showwarning("Atención", "Selecciona una cuenta primero.")
+            return
+
+        id_real = self.extraer_id_real(seleccion)
+        alias_dict = self.cargar_alias()
+        nombre_actual = alias_dict.get(id_real, "")
+
+        # 1. Creamos una ventana de nivel superior (Popup)
+        self.ventana_input = ctk.CTkToplevel(self)
+        self.ventana_input.title("Personalizar Cuenta")
+        self.ventana_input.geometry("550x230")
+        self.ventana_input.resizable(False, False)
+        self.ventana_input.grab_set() # Bloquea la ventana principal hasta cerrar esta
+
+        # 2. Etiquetas de información
+        ctk.CTkLabel(self.ventana_input, text=f"ID: {id_real[:100]}", font=("Arial", 12)).pack(pady=(10,0))
+        ctk.CTkLabel(self.ventana_input, text="Escribe el nuevo alias (3-20 caracteres):", font=("Arial", 12, "bold")).pack(pady=10)
+
+        # 3. EL CAMPO DE TEXTO CON LA DATA CARGADA
+        self.entry_alias = ctk.CTkEntry(self.ventana_input, width=300)
+        self.entry_alias.insert(0, nombre_actual) # <--- AQUÍ CARGAMOS EL NOMBRE ANTERIOR
+        self.entry_alias.pack(pady=10)
+        self.entry_alias.focus_set() # Pone el cursor ahí automáticamente
+
+        # 4. Botón de Guardar
+        def confirmar():
+            nuevo_alias = self.entry_alias.get().strip()
+            
+            # Validaciones
+            if len(nuevo_alias) < 3 or len(nuevo_alias) > 20:
+                messagebox.showerror("Error", "Debe tener entre 3 y 20 caracteres.")
+                return
+                
+            otros_alias = [a.lower() for fid, a in alias_dict.items() if fid != id_real]
+            if nuevo_alias.lower() in otros_alias:
+                messagebox.showerror("Error", "Este nombre ya lo usa otra cuenta.")
+                return
+
+            self.guardar_alias(id_real, nuevo_alias)
+            self.actualizar_listado_cuentas()
+            self.ventana_input.destroy() # Cerramos el popup
+            messagebox.showinfo("Éxito", "Nombre actualizado.")
+
+        ctk.CTkButton(self.ventana_input, text="Guardar", command=confirmar).pack(pady=20)
+
+    def actualizar_listado_cuentas(self):
+        """Refresca el ComboBox con los nuevos nombres."""
+        lista, _ = self.obtener_todas_las_cuentas()
+        self.combo_cuentas.configure(values=lista)
+        # Seleccionamos el primero de la lista (el recién editado)
+        if lista:
+            self.combo_cuentas.set(lista[0])
+
+    def extraer_id_real(self, texto_combo):
+        """Extrae el ID de la carpeta de Riot del texto del ComboBox."""
+        import re
+        # Busca el patrón de ID dentro de paréntesis si existe
+        # Ejemplo: "Principal (2c082091...)" -> extrae el ID real del JSON
+        # Si no hay paréntesis, asume que el texto es el ID directo
+        if "(" in texto_combo and ")" in texto_combo:
+            # Recuperamos el ID original comparando con nuestro JSON de alias
+            alias_dict = self.cargar_alias()
+            for folder_id, alias in alias_dict.items():
+                nombre_con_id = f"{alias} ({folder_id[:8]}...)"
+                if nombre_con_id == texto_combo:
+                    return folder_id
+        return texto_combo
+
     def toggle_ultra_fps(self):
         import os
         import configparser
@@ -596,10 +690,29 @@ class ValorantConfigApp(ctk.CTk):
             text_color="#4ade80"
         ))
 
-       # Parte 2: El ComboBox (Selector)
+        # --- SECCIÓN DE CUENTAS (UNIFICADA) ---
+        # 1. Creamos el contenedor que permite poner cosas una al lado de la otra
+        self.container_cuenta_pro = ctk.CTkFrame(self, fg_color="transparent")
+        self.container_cuenta_pro.pack(pady=5, padx=20, fill="x")
+
+        # 2. Etiqueta de Cuenta
+        self.label_cuenta_fija = ctk.CTkLabel(
+            self.container_cuenta_pro, 
+            text="", 
+            font=("Segoe UI", 12, "bold")
+        )
+        self.label_cuenta_fija.grid(row=0, column=0, padx=(0, 10))
+
+        # Eventos de la etiqueta (Abrir archivo y efectos Hover)
+        self.label_cuenta_fija.configure(cursor="hand2")
+        self.label_cuenta_fija.bind("<Button-1>", self.abrir_archivo_config)
+        self.label_cuenta_fija.bind("<Enter>", lambda e: self.label_cuenta_fija.configure(text_color="#005f52"))
+        self.label_cuenta_fija.bind("<Leave>", lambda e: self.label_cuenta_fija.configure(text_color="#4ade80"))
+
+        # 3. ComboBox de Cuentas
         lista_cuentas, _ = self.obtener_todas_las_cuentas()
         self.combo_cuentas = ctk.CTkComboBox(
-            self.frame_cuenta_linea,
+            self.container_cuenta_pro,
             values=lista_cuentas,
             width=320,
             height=28,
@@ -608,11 +721,25 @@ class ValorantConfigApp(ctk.CTk):
             fg_color="#1a1a1a",
             border_color="#4ade80",
             button_color="#4ade80",
-            text_color="#4ade80", 
-            # opciones al desplegar
-            dropdown_text_color="#4ade80" 
+            text_color="#4ade80",
+            dropdown_text_color="#4ade80"
         )
-        self.combo_cuentas.pack(side="left")
+        self.combo_cuentas.grid(row=0, column=1, sticky="we")
+
+        # 4. Botón de Editar Alias (El lápiz)
+        self.btn_editar_alias = ctk.CTkButton(
+            self.container_cuenta_pro,
+            text="✎",
+            width=35,
+            height=28,
+            fg_color="#1f538d",
+            hover_color="#14375e",
+            command=self.abrir_ventana_alias
+        )
+        self.btn_editar_alias.grid(row=0, column=2, padx=(5, 0))
+
+        # Configuración de estiramiento
+        self.container_cuenta_pro.columnconfigure(1, weight=1)
 
 
         vcmd = (self.register(self.validar_numeros), '%P')
@@ -741,34 +868,55 @@ class ValorantConfigApp(ctk.CTk):
     def cambiar_idioma(self):
         self.lang = "EN" if self.switch_lang.get() == 1 else "ES"
         t = self.idiomas[self.lang]
-        self.label_titulo.configure(text=t["titulo"]), self.label_res_p.configure(text=t["res_perso"])
-        self.label_x_text.configure(text=t["ancho"]), self.label_y_text.configure(text=t["alto"])
-        self.label_sug.configure(text=t["sugeridas"]), self.btn_aplicar.configure(text=t["btn_aplicar"])
-        self.btn_crear_bk.configure(text=t["btn_crear_bk"]), self.btn_restaurar_bk.configure(text=t["btn_restaurar_bk"])
-        self.label_calidad.configure(text=t["calidad_res"]), self.switch_fps.configure(text=t["boost"]), self.switch_read_only.configure(text=t["bloquear"])
-        self.label_footer.configure(text=t["footer"]), self.label_creditos.configure(text=t["creditos"])
+        
+        # --- Actualización de textos de la interfaz ---
+        self.label_titulo.configure(text=t["titulo"])
+        self.label_res_p.configure(text=t["res_perso"])
+        self.label_x_text.configure(text=t["ancho"])
+        self.label_y_text.configure(text=t["alto"])
+        self.label_sug.configure(text=t["sugeridas"])
+        self.btn_aplicar.configure(text=t["btn_aplicar"])
+        self.btn_crear_bk.configure(text=t["btn_crear_bk"])
+        self.btn_restaurar_bk.configure(text=t["btn_restaurar_bk"])
+        self.label_calidad.configure(text=t["calidad_res"])
+        self.switch_fps.configure(text=t["boost"])
+        self.switch_read_only.configure(text=t["bloquear"])
+        self.label_footer.configure(text=t["footer"])
+        self.label_creditos.configure(text=t["creditos"])
         self.combo_res.configure(values=t["opciones"])
         self.check_res_windows.configure(text=t["res_win"])
-        if self.combo_res.get() in ["", "CTkComboBox"]: self.combo_res.set(t["combo_init"])      
-        # --- SELECTOR DE CUENTAS ---
-        t = self.idiomas[self.lang]
+        
+        if self.combo_res.get() in ["", "CTkComboBox"]:
+            self.combo_res.set(t["combo_init"])
+
+        # --- SECCIÓN DE CUENTAS (Lógica de Alias unificada) ---
         if self.ruta_ini:
-            # Extraer ID de la carpeta
-            nombre = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
+            # 1. Extraer ID real de la carpeta
+            id_carpeta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
             
-            # Actualizamos la etiqueta con subrayado para indicar que es un link
+            # 2. Verificar si este ID tiene un Alias guardado
+            alias_dict = self.cargar_alias()
+            
+            if id_carpeta in alias_dict:
+                # Si tiene alias, construimos el nombre que el ComboBox reconoce
+                nombre_final = f"{alias_dict[id_carpeta]} ({id_carpeta[:8]}...)"
+            else:
+                # Si no tiene, dejamos el ID original
+                nombre_final = id_carpeta
+
             self.label_cuenta_fija.configure(
                 text=t["cuenta_ok"], 
                 text_color="#4ade80",
-                font=("Segoe UI", 12, "bold") # <--- Añadimos el subrayado
+                font=("Segoe UI", 12, "bold")
             )
-            # Actualizamos el valor del combo
-            self.combo_cuentas.set(nombre)
+            # Ponemos el Alias (o ID) en el combo al iniciar o cambiar idioma
+            self.combo_cuentas.set(nombre_final)
         else:
+            # Caso cuando no se detecta ninguna cuenta
             self.label_cuenta_fija.configure(
                 text=t["cuenta_no"], 
                 text_color="#f87171",
-                font=("Segoe UI", 12, "bold") # Sin subrayado si no hay cuenta
+                font=("Segoe UI", 12, "bold")
             )
             self.combo_cuentas.set("")
 
@@ -807,29 +955,36 @@ class ValorantConfigApp(ctk.CTk):
         import getpass
         import configparser
         
-        # 1. Definimos las variables al inicio para evitar el error de "UnboundLocalError"
         usuario_windows = getpass.getuser()
         ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
         cuentas = []
-        cuenta_actual = "" # <--- Esto arregla el error que te dio
+        cuenta_actual = ""
+        
+        # 1. CARGA ÚNICA: Cargamos el diccionario de alias una sola vez al inicio
+        alias_dict = self.cargar_alias()
 
-        # 2. Filtrado de carpetas (Tu lógica de "LIKE" inverso por usuario)
+        # 2. BUCLE DE DETECCIÓN
         if os.path.exists(ruta_base):
             for nombre in os.listdir(ruta_base):
-                # Ignoramos si empieza con el nombre de usuario de Windows
-                if nombre.lower().startswith(usuario_windows.lower()):
-                    continue
-                    
-                # Ignoramos carpetas de sistema conocidas
-                if nombre in ["Windows", "WindowsClient", "CrashReportClient"]:
-                    continue
+                # Filtros de exclusión (Usuario y carpetas de sistema)
+                if nombre.lower().startswith(usuario_windows.lower()): continue
+                if nombre in ["Windows", "WindowsClient", "CrashReportClient"]: continue
                 
-                # Solo aceptamos si tiene el archivo .ini dentro
+                # Verificamos si la carpeta es una cuenta válida (tiene el .ini)
                 ruta_ini = os.path.join(ruta_base, nombre, "WindowsClient", "GameUserSettings.ini")
+                
                 if os.path.exists(ruta_ini):
-                    cuentas.append(nombre)
+                    # --- LÓGICA DE TRADUCCIÓN CORREGIDA ---
+                    # Si el ID está en nuestro JSON, usamos el nombre bonito; si no, el ID puro
+                    if nombre in alias_dict:
+                        nombre_mostrar = f"{alias_dict[nombre]} ({nombre[:8]}...)"
+                    else:
+                        nombre_mostrar = nombre
+                    
+                    # Agregamos a la lista el nombre ya procesado
+                    cuentas.append(nombre_mostrar)
 
-        # 3. Detección de la cuenta activa (RiotLocalMachine.ini)
+        # 3. DETECCIÓN DE CUENTA ACTIVA (Igual que antes)
         ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
         if os.path.exists(ruta_riot):
             try:
@@ -837,8 +992,7 @@ class ValorantConfigApp(ctk.CTk):
                 cp.read(ruta_riot)
                 if 'General' in cp and 'LastPlayedUser' in cp['General']:
                     cuenta_actual = cp['General']['LastPlayedUser']
-            except:
-                pass
+            except: pass
                 
         return cuentas, cuenta_actual
 
