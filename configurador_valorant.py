@@ -31,10 +31,30 @@ def resource_path(relative_path):
 
 class ValorantConfigApp(ctk.CTk):
     def __init__(self):
-        super().__init__()
+        super().__init__()   
         
+        # 1. El "Ancla": Este archivo siempre vive al lado del exe
+        self.archivo_semilla = os.path.join(os.path.abspath("."), "app_launcher.json")
+        
+        # 2. Obtener ruta de carpeta de datos (Semilla o Defecto)
+        self.folder_data = self.obtener_ruta_datos_inicial()
+        
+        # 3. Rutas MASTER
+        self.ruta_perfiles = os.path.join(self.folder_data, "profiles.json") # EL SUPER JSON
+        self.folder_backups = os.path.join(self.folder_data, "backups")
+        
+        # 4. Asegurar que existan las carpetas
+        os.makedirs(self.folder_backups, exist_ok=True)
+
+        # 5. MIGRACIÓN Y CARGA DE SUPER JSON
+        self.datos_pro = self.cargar_y_migrar_datos()
+        
+        # Extraemos valor inicial del Super JSON (Configuración global)
+        self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
+
+        # --- CONFIGURACIÓN DE VENTANA ---
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("570x730") 
+        self.geometry("570x730")
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -157,99 +177,132 @@ class ValorantConfigApp(ctk.CTk):
 
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
 
+    def cargar_y_migrar_datos(self):
+        """Unifica todos los archivos (.json, .txt) en el Super JSON profiles.json."""
+        if os.path.exists(self.ruta_perfiles):
+            try:
+                with open(self.ruta_perfiles, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except: pass
+
+        # Estructura base si el archivo no existe
+        nuevo_super_json = {
+            "config_global": {"res_3d_default": 100, "language": "ES"},
+            "accounts": {}
+        }
+
+        # --- MIGRACIÓN DE ALIAS ---
+        ruta_alias_v = os.path.join(self.folder_data, "account_names.json")
+        if os.path.exists(ruta_alias_v):
+            try:
+                with open(ruta_alias_v, "r", encoding="utf-8") as f:
+                    viejos = json.load(f)
+                    for fid, alias in viejos.items():
+                        nuevo_super_json["accounts"][fid] = {"alias": alias, "res_3d": 100}
+                os.remove(ruta_alias_v) # Limpieza
+            except: pass
+
+        # --- MIGRACIÓN DE RESOLUCIÓN 3D ---
+        # Si tienes archivos tipo pref_res_3d_ID.txt, podrías migrarlos aquí también
+        
+        with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
+            json.dump(nuevo_super_json, f, indent=4)
+        return nuevo_super_json
+
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
 
-    # --- NUEVA FUNCIÓN PARA EL SELECTOR DE CUENTAS ---
     def obtener_todas_las_cuentas(self):
-        """Busca todas las carpetas de cuentas usando un filtro estricto de ID."""
-        
+        """Versión Final: Filtro Regex + Super JSON + Detección Riot."""
+        import getpass
+        import configparser
+
         ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
+        usuario_windows = getpass.getuser()
         cuentas = []
         cuenta_actual = ""
+        
+        # Regex estricto de ID de Riot (UUID + Región)
+        patron_cuenta = re.compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[a-zA-Z]+$')
 
-        # Este Regex busca EXACTAMENTE el patrón de cuenta: 
-        # 8-4-4-4-12 caracteres hexadecimales + el sufijo de región (latam, br, na, etc)
-        # Ejemplo que SI pasa: f98baca0-deaa-523e-81fe-fd250e49465c-latam
-        # Ejemplo que NO pasa: usuario-windows-31FFFD244817C1C09E2B4F93E9C9039F-latam
-        patron_cuenta_real = re.compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[a-zA-Z]+$')
+        # 1. Cargamos perfiles del Super JSON (en memoria)
+        perfiles = self.cargar_alias()
 
         if os.path.exists(ruta_base):
             for nombre in os.listdir(ruta_base):
-                ruta_folder = os.path.join(ruta_base, nombre)
+                # Filtros de exclusión por nombre de usuario y carpetas sistema
+                if nombre.lower().startswith(usuario_windows.lower()): continue
+                if nombre in ["Windows", "WindowsClient", "CrashReportClient"]: continue
                 
-                # 1. Es carpeta
-                # 2. Cumple el patrón estricto de 5 guiones + región
-                # 3. Existe el archivo .ini dentro (Doble validación de seguridad)
-                if os.path.isdir(ruta_folder) and patron_cuenta_real.match(nombre):
-                    ruta_ini_check = os.path.join(ruta_folder, "WindowsClient", "GameUserSettings.ini")
+                # Validación por Regex y existencia de .ini
+                if patron_cuenta.match(nombre):
+                    ruta_ini_check = os.path.join(ruta_base, nombre, "WindowsClient", "GameUserSettings.ini")
                     if os.path.exists(ruta_ini_check):
-                        cuentas.append(nombre)
+                        # --- LÓGICA DE TRADUCCIÓN LIMPIA ---
+                        if nombre in perfiles:
+                            datos = perfiles[nombre]
+                            # Extraemos solo el texto del alias si es un diccionario
+                            alias_texto = datos.get("alias", "") if isinstance(datos, dict) else ""
+                            
+                            if alias_texto:
+                                cuentas.append(f"{alias_texto}  |  id: {nombre}")
+                            else:
+                                cuentas.append(nombre)
+                        else:
+                            cuentas.append(nombre)
 
-        # Lógica de detección de la cuenta activa
+        # 2. Detección de cuenta activa de Riot
         ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
         if os.path.exists(ruta_riot):
             try:
-                import configparser
                 cp = configparser.ConfigParser()
                 cp.read(ruta_riot)
                 if 'General' in cp and 'LastPlayedUser' in cp['General']:
                     cuenta_actual = cp['General']['LastPlayedUser']
-            except:
-                pass
+            except: pass
                 
         return cuentas, cuenta_actual
 
-    # --- NUEVA FUNCIÓN PARA ACTUALIZAR LA RUTA ---
     def cambiar_de_cuenta_manual(self, cuenta_seleccionada):
-        """Cambia la ruta del archivo .ini según la cuenta seleccionada."""
+        """Versión 1.3: Cambia de cuenta y carga TODO desde el Super JSON."""
         import os
+        
+        # 1. Extraemos el ID real (Manejando Alias)
+        id_real = self.extraer_id_real(cuenta_seleccionada)
+        
         ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
-        nueva_ruta = os.path.join(ruta_base, cuenta_seleccionada, "WindowsClient", "GameUserSettings.ini")
+        nueva_ruta = os.path.join(ruta_base, id_real, "WindowsClient", "GameUserSettings.ini")
         
         if os.path.exists(nueva_ruta):
             self.ruta_ini = nueva_ruta
             
-            # --- AGREGAR ESTA LÍNEA AQUÍ ---
-            # Actualiza la ruta del JSON de backup para la cuenta seleccionada
-            self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
+            # 2. Accedemos a los datos de esta cuenta en el Super JSON
+            perfil = self.datos_pro.get("accounts", {}).get(id_real, {})
             
-            self.leer_datos_actuales() # Recarga la resolución de esa cuenta
-
-    # --- NUEVA FUNCIÓN PARA ACTUALIZAR LA RUTA ---
-    def cambiar_de_cuenta_manual(self, cuenta_seleccionada):
-        """Cambia la ruta del archivo .ini según la cuenta seleccionada."""
-        import os
-        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
-        nueva_ruta = os.path.join(ruta_base, cuenta_seleccionada, "WindowsClient", "GameUserSettings.ini")
-        
-        if os.path.exists(nueva_ruta):
-            self.ruta_ini = nueva_ruta
-            # Actualiza la ruta del JSON de backup para la cuenta seleccionada
-            self.archivo_cache_fps = os.path.join(os.path.dirname(self.ruta_ini), "original_fps_settings.json")
+            # --- CARGAR RESOLUCIÓN 3D ---
+            # Si no tiene una grabada, usa el default global o 100
+            val_default = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
+            valor_3d = perfil.get("res_3d", val_default)
+            
+            self.slider_calidad.set(valor_3d)
+            self.actualizar_label_slider(valor_3d)
+            
+            # --- CARGAR ESTADO DE FPS (Opcional por ahora) ---
+            # Aquí podrías poner el switch en ON si detectas que tiene boost activo
+            
+            # 3. Recarga la UI general (lectura del .ini, idioma, etc.)
             self.leer_datos_actuales()
 
     def cargar_alias(self):
-        """Carga los nombres personalizados desde un archivo JSON."""
-        import json
-        # Guardamos el JSON en la misma carpeta que el ejecutable
-        self.ruta_alias = os.path.join(os.path.abspath("."), "account_names.json")
-        if os.path.exists(self.ruta_alias):
-            try:
-                with open(self.ruta_alias, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except:
-                return {}
-        return {}
+        """Retorna el diccionario de cuentas desde el Super JSON en memoria."""
+        # En lugar de leer un archivo viejo, leemos lo que ya tenemos cargado
+        return self.datos_pro.get("accounts", {})
 
     def guardar_alias(self, folder_id, nuevo_nombre):
-        """Guarda un nuevo alias vinculado a un ID de carpeta."""
-        import json
-        alias_dict = self.cargar_alias()
-        alias_dict[folder_id] = nuevo_nombre
-        with open(self.ruta_alias, "w", encoding="utf-8") as f:
-            json.dump(alias_dict, f, indent=4)
+        """Guarda el nombre personalizado directamente en el Super JSON (profiles.json)."""
+        # Usamos la función maestra para inyectar el alias en el perfil de la cuenta
+        self.guardar_en_super_json("accounts", folder_id, "alias", nuevo_nombre)
 
     def abrir_ventana_alias(self):
         import tkinter.messagebox as messagebox
@@ -261,7 +314,10 @@ class ValorantConfigApp(ctk.CTk):
 
         id_real = self.extraer_id_real(seleccion)
         alias_dict = self.cargar_alias()
-        nombre_actual = alias_dict.get(id_real, "")
+        # --- CAMBIO 1: Extraer solo el texto del alias para el Entry ---
+        perfil_cuenta = alias_dict.get(id_real, {})
+        # Si perfil_cuenta es un diccionario, extraemos 'alias'; si no, usamos vacío
+        nombre_actual = perfil_cuenta.get("alias", "") if isinstance(perfil_cuenta, dict) else ""
 
         # 1. Creamos una ventana de nivel superior (Popup)
         self.ventana_input = ctk.CTkToplevel(self)
@@ -271,8 +327,8 @@ class ValorantConfigApp(ctk.CTk):
         self.ventana_input.grab_set() # Bloquea la ventana principal hasta cerrar esta
 
         # 2. Etiquetas de información
-        ctk.CTkLabel(self.ventana_input, text=f"ID: {id_real[:100]}", font=("Arial", 12)).pack(pady=(10,0))
-        ctk.CTkLabel(self.ventana_input, text="Escribe el nuevo alias (3-20 caracteres):", font=("Arial", 12, "bold")).pack(pady=10)
+        ctk.CTkLabel(self.ventana_input, text=f"ID: {id_real}", font=("Arial", 10), text_color="gray").pack(pady=(15, 0))
+        ctk.CTkLabel(self.ventana_input, text="Escribe el nuevo alias (3-30 caracteres):", font=("Arial", 12, "bold")).pack(pady=10)
 
         # 3. EL CAMPO DE TEXTO CON LA DATA CARGADA
         self.entry_alias = ctk.CTkEntry(self.ventana_input, width=300)
@@ -284,22 +340,65 @@ class ValorantConfigApp(ctk.CTk):
         def confirmar():
             nuevo_alias = self.entry_alias.get().strip()
             
-            # Validaciones
-            if len(nuevo_alias) < 3 or len(nuevo_alias) > 20:
-                messagebox.showerror("Error", "Debe tener entre 3 y 20 caracteres.")
+            # 1. Validaciones
+            if len(nuevo_alias) < 3 or len(nuevo_alias) > 30:
+                messagebox.showerror("Error", "Debe tener entre 3 y 30 caracteres.")
                 return
-                
-            otros_alias = [a.lower() for fid, a in alias_dict.items() if fid != id_real]
+
+            otros_alias = []
+            for fid, datos in alias_dict.items():
+                if fid != id_real and isinstance(datos, dict):
+                    otros_alias.append(datos.get("alias", "").lower())
+
             if nuevo_alias.lower() in otros_alias:
                 messagebox.showerror("Error", "Este nombre ya lo usa otra cuenta.")
                 return
 
+            # 1. GUARDAR EN DISCO
             self.guardar_alias(id_real, nuevo_alias)
-            self.actualizar_listado_cuentas()
-            self.ventana_input.destroy() # Cerramos el popup
+            
+            # 2. ACTUALIZAR MEMORIA (Importante para que no use datos viejos)
+            if "accounts" not in self.datos_pro:
+                self.datos_pro["accounts"] = {}
+            self.datos_pro["accounts"][id_real] = {"alias": nuevo_alias}
+
+            # 3. REGENERAR LISTA
+            nueva_lista, _ = self.obtener_todas_las_cuentas()
+            self.combo_cuentas.configure(values=nueva_lista)
+            
+            # 4. SETEAR EL TEXTO VISUAL (Aquí estaba el error)
+            nombre_formateado = f"{nuevo_alias}  |  id: {id_real}"
+            self.combo_cuentas.set(nombre_formateado)
+
+            self.ventana_input.destroy()
             messagebox.showinfo("Éxito", "Nombre actualizado.")
 
         ctk.CTkButton(self.ventana_input, text="Guardar", command=confirmar).pack(pady=20)
+
+    def abrir_ajustes_globales(self):
+        """Ventana para cambiar la ubicación de la carpeta de datos."""
+        ventana_adj = ctk.CTkToplevel(self)
+        ventana_adj.title("Ajustes de Aplicación")
+        ventana_adj.geometry("500x300")
+        ventana_adj.grab_set()
+        ventana_adj.attributes("-topmost", True)
+
+        ctk.CTkLabel(ventana_adj, text="Configuración de Almacenamiento", font=("Arial", 14, "bold")).pack(pady=20)
+        
+        lbl_ruta = ctk.CTkLabel(ventana_adj, text=f"Ruta actual:\n{self.folder_data}", wraplength=400)
+        lbl_ruta.pack(pady=10)
+
+        def cambiar_ruta():
+            from tkinter import filedialog
+            nueva_ruta = filedialog.askdirectory(title="Selecciona la nueva ubicación para /data")
+            if nueva_ruta:
+                with open(self.archivo_semilla, "w") as f:
+                    json.dump({"data_path": nueva_ruta}, f)
+                
+                messagebox.showinfo("Éxito", "Ruta actualizada. La aplicación se cerrará para aplicar los cambios.")
+                self.destroy()
+
+        ctk.CTkButton(ventana_adj, text="Cambiar Ubicación de Datos", command=cambiar_ruta).pack(pady=20)
 
     def actualizar_listado_cuentas(self):
         """Refresca el ComboBox con los nuevos nombres."""
@@ -310,31 +409,39 @@ class ValorantConfigApp(ctk.CTk):
             self.combo_cuentas.set(lista[0])
 
     def extraer_id_real(self, texto_combo):
-        """Extrae el ID de la carpeta de Riot del texto del ComboBox."""
-        import re
-        # Busca el patrón de ID dentro de paréntesis si existe
-        # Ejemplo: "Principal (2c082091...)" -> extrae el ID real del JSON
-        # Si no hay paréntesis, asume que el texto es el ID directo
+        """Extrae el ID real reconociendo el nuevo separador '|' o el antiguo '()'."""
+        # 1. Caso Formato Nuevo: "ALIAS  |  id: 7491434d-..."
+        if " |  id: " in texto_combo:
+            return texto_combo.split(" |  id: ")[-1].strip()
+
+        # 2. Caso Formato Viejo: "ALIAS (7491434d...)"
         if "(" in texto_combo and ")" in texto_combo:
-            # Recuperamos el ID original comparando con nuestro JSON de alias
-            alias_dict = self.cargar_alias()
-            for folder_id, alias in alias_dict.items():
-                nombre_con_id = f"{alias} ({folder_id[:8]}...)"
-                if nombre_con_id == texto_combo:
-                    return folder_id
+            try:
+                # Extraemos lo que hay entre paréntesis
+                id_parcial = texto_combo.split("(")[-1].split("...")[0].replace(")", "").strip()
+                # Buscamos en el Super JSON cuál coincide
+                perfiles = self.cargar_alias()
+                for folder_id in perfiles.keys():
+                    if folder_id.startswith(id_parcial):
+                        return folder_id
+            except:
+                pass
+    # 3. Si no hay separadores, el texto ya es el ID puro
         return texto_combo
 
     def toggle_ultra_fps(self):
-        import os
         import configparser
-        import json
 
         if not self.ruta_ini or not os.path.exists(self.ruta_ini):
             return
 
+        #Definir rutas dinámicas en /data ---
+        id_real = self.extraer_id_real(self.combo_cuentas.get())
+        self.archivo_cache_fps = os.path.join(self.folder_data, f"backup_fps_{id_real[:8]}.json")
+        self.archivo_custom_fps = os.path.join(self.folder_data, f"custom_fps_{id_real[:8]}.json")
+
         # Si el switch se activa (Posición 1)
         if self.switch_fps.get() == 1:
-            # --- CRÍTICO: Solo creamos el backup si NO existe uno previo ---
             # Esto evita que guardemos los "ceros" como si fueran valores originales
             if not os.path.exists(self.archivo_cache_fps):
                 config = configparser.ConfigParser()
@@ -377,6 +484,9 @@ class ValorantConfigApp(ctk.CTk):
                 except: pass
 
     def abrir_ventana_opciones_fps(self):
+        id_real = self.extraer_id_real(self.combo_cuentas.get())
+        self.archivo_cache_fps = os.path.join(self.folder_data, f"backup_fps_{id_real[:8]}.json")
+        self.archivo_custom_fps = os.path.join(self.folder_data, f"custom_fps_{id_real[:8]}.json")
         """Abre un popup para elegir entre configuración por defecto o personalizada."""
         # Crear ventana secundaria modal
         self.popup = ctk.CTkToplevel(self)
@@ -628,6 +738,73 @@ class ValorantConfigApp(ctk.CTk):
             self.actualizar_estado_interfaz()
         except: pass
 
+    def obtener_ruta_datos_inicial(self):
+        """Lee el archivo semilla para saber dónde está la carpeta data."""
+        import json
+        if os.path.exists(self.archivo_semilla):
+            try:
+                with open(self.archivo_semilla, "r") as f:
+                    config = json.load(f)
+                    return config.get("data_path", os.path.join(os.path.abspath("."), "data"))
+            except:
+                pass
+        # Si el archivo no existe, usamos la ruta por defecto al lado del exe
+        return os.path.join(os.path.abspath("."), "data")
+
+    def cargar_y_migrar_datos(self):
+        """Lee el Super JSON o migra archivos antiguos si es la primera vez."""
+        import json
+        
+        # Si ya existe el Super JSON, simplemente lo cargamos
+        if os.path.exists(self.ruta_perfiles):
+            try:
+                with open(self.ruta_perfiles, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                pass
+
+        # Si no existe, creamos la estructura base
+        nuevo_super_json = {
+            "config_global": {"res_3d_default": 100, "language": "ES"},
+            "accounts": {}
+        }
+
+        # --- MIGRACIÓN DE ALIAS ---
+        ruta_alias_vieja = os.path.join(self.folder_data, "account_names.json")
+        if os.path.exists(ruta_alias_vieja):
+            try:
+                with open(ruta_alias_vieja, "r", encoding="utf-8") as f:
+                    viejos_alias = json.load(f)
+                    for fid, alias in viejos_alias.items():
+                        # Creamos la estructura por cuenta
+                        nuevo_super_json["accounts"][fid] = {"alias": alias, "res_3d": 100}
+                os.remove(ruta_alias_vieja) # Borramos el viejo para limpiar
+            except: pass
+
+        # Guardamos el nuevo Super JSON
+        with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
+            json.dump(nuevo_super_json, f, indent=4)
+            
+        return nuevo_super_json
+
+    def guardar_en_super_json(self, seccion, subseccion, clave, valor):
+        """Guarda cualquier dato en el Super JSON y actualiza el archivo."""
+        if seccion not in self.datos_pro:
+            self.datos_pro[seccion] = {}
+            
+        if subseccion:
+            if subseccion not in self.datos_pro[seccion]:
+                self.datos_pro[seccion][subseccion] = {}
+            self.datos_pro[seccion][subseccion][clave] = valor
+        else:
+            self.datos_pro[seccion][clave] = valor
+
+        try:
+            with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
+                json.dump(self.datos_pro, f, indent=4)
+        except Exception as e:
+            print(f"Error al guardar Super JSON: {e}")
+
     def setup_ui(self):
         # Contenedor superior con alineación mejorada
         self.top_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -656,8 +833,19 @@ class ValorantConfigApp(ctk.CTk):
         )
         self.switch_lang.pack(side="left")
 
+        self.btn_config = ctk.CTkButton(
+        self.top_frame,
+        text="⚙", # Puedes usar un icono si tienes uno (ej. self.img_config)
+        width=32,
+        height=32,
+        corner_radius=16,
+        fg_color="transparent",
+        hover_color="#333333",
+        command=self.abrir_ajustes_globales # Función que crearemos ahora
+        )
+        self.btn_config.pack(side="left", padx=(0, 5))
 
-        # Título y Estado
+            # Título y Estado
         self.label_titulo = ctk.CTkLabel(self, text="", font=("Segoe UI", 24, "bold"))
         self.label_titulo.pack(pady=(0, 5))
         # Contenedor centrado (Sin expandir al 100% del ancho)
@@ -714,7 +902,7 @@ class ValorantConfigApp(ctk.CTk):
         self.combo_cuentas = ctk.CTkComboBox(
             self.container_cuenta_pro,
             values=lista_cuentas,
-            width=320,
+            width=480, # Aumentamos un poco más para el ID completo (36 chars) + Alias (30 chars)
             height=28,
             state="readonly",
             command=self.cambiar_de_cuenta_manual,
@@ -722,9 +910,11 @@ class ValorantConfigApp(ctk.CTk):
             border_color="#4ade80",
             button_color="#4ade80",
             text_color="#4ade80",
-            dropdown_text_color="#4ade80"
+            dropdown_text_color="#4ade80",
+            font=("Segoe UI", 11) # Fuente un poco más pequeña ayuda a que quepa más texto
         )
-        self.combo_cuentas.grid(row=0, column=1, sticky="we")
+        # El sticky="we" hará que se adapte al ancho del contenedor
+        self.combo_cuentas.grid(row=0, column=1, sticky="we", padx=(0, 5))
 
         # 4. Botón de Editar Alias (El lápiz)
         self.btn_editar_alias = ctk.CTkButton(
@@ -807,6 +997,9 @@ class ValorantConfigApp(ctk.CTk):
         self.label_slider_num.pack(side="left", padx=2)
         self.slider_calidad = ctk.CTkSlider(self.frame_slider, from_=10, to=100, command=self.actualizar_label_slider)
         self.slider_calidad.pack(side="right", fill="x", expand=True, padx=10)
+        self.slider_calidad.bind("<ButtonRelease-1>", lambda e: self.guardar_pref_3d(self.slider_calidad.get()))
+        self.slider_calidad.set(self.valor_3d_inicial)
+        self.actualizar_label_slider(self.valor_3d_inicial)
 
         # Backup
         self.frame_bk = ctk.CTkFrame(self, fg_color="transparent")
@@ -894,14 +1087,20 @@ class ValorantConfigApp(ctk.CTk):
             # 1. Extraer ID real de la carpeta
             id_carpeta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
             
-            # 2. Verificar si este ID tiene un Alias guardado
+            # 2. Verificar si este ID tiene datos guardados en el Super JSON
             alias_dict = self.cargar_alias()
             
             if id_carpeta in alias_dict:
-                # Si tiene alias, construimos el nombre que el ComboBox reconoce
-                nombre_final = f"{alias_dict[id_carpeta]} ({id_carpeta[:8]}...)"
+                datos_cuenta = alias_dict[id_carpeta]
+                # EXTRAEMOS SOLO EL TEXTO DEL ALIAS
+                # Si datos_cuenta es un dict, sacamos 'alias'; si no, lo usamos tal cual
+                alias_texto = datos_cuenta.get("alias", "") if isinstance(datos_cuenta, dict) else ""
+                
+                if alias_texto:
+                    nombre_final = f"{alias_texto} ({id_carpeta[:8]}...)"
+                else:
+                    nombre_final = id_carpeta
             else:
-                # Si no tiene, dejamos el ID original
                 nombre_final = id_carpeta
 
             self.label_cuenta_fija.configure(
@@ -909,7 +1108,7 @@ class ValorantConfigApp(ctk.CTk):
                 text_color="#4ade80",
                 font=("Segoe UI", 12, "bold")
             )
-            # Ponemos el Alias (o ID) en el combo al iniciar o cambiar idioma
+            # Ponemos el nombre limpio (o ID) en el combo
             self.combo_cuentas.set(nombre_final)
         else:
             # Caso cuando no se detecta ninguna cuenta
@@ -949,53 +1148,6 @@ class ValorantConfigApp(ctk.CTk):
             self.after(500, lambda: setattr(self, 'bloqueo_en_progreso', False))
 
             self.actualizar_estado_interfaz() # <-- Añade esta línea al final
-
-    def obtener_todas_las_cuentas(self):
-        import os
-        import getpass
-        import configparser
-        
-        usuario_windows = getpass.getuser()
-        ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
-        cuentas = []
-        cuenta_actual = ""
-        
-        # 1. CARGA ÚNICA: Cargamos el diccionario de alias una sola vez al inicio
-        alias_dict = self.cargar_alias()
-
-        # 2. BUCLE DE DETECCIÓN
-        if os.path.exists(ruta_base):
-            for nombre in os.listdir(ruta_base):
-                # Filtros de exclusión (Usuario y carpetas de sistema)
-                if nombre.lower().startswith(usuario_windows.lower()): continue
-                if nombre in ["Windows", "WindowsClient", "CrashReportClient"]: continue
-                
-                # Verificamos si la carpeta es una cuenta válida (tiene el .ini)
-                ruta_ini = os.path.join(ruta_base, nombre, "WindowsClient", "GameUserSettings.ini")
-                
-                if os.path.exists(ruta_ini):
-                    # --- LÓGICA DE TRADUCCIÓN CORREGIDA ---
-                    # Si el ID está en nuestro JSON, usamos el nombre bonito; si no, el ID puro
-                    if nombre in alias_dict:
-                        nombre_mostrar = f"{alias_dict[nombre]} ({nombre[:8]}...)"
-                    else:
-                        nombre_mostrar = nombre
-                    
-                    # Agregamos a la lista el nombre ya procesado
-                    cuentas.append(nombre_mostrar)
-
-        # 3. DETECCIÓN DE CUENTA ACTIVA (Igual que antes)
-        ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
-        if os.path.exists(ruta_riot):
-            try:
-                cp = configparser.ConfigParser()
-                cp.read(ruta_riot)
-                if 'General' in cp and 'LastPlayedUser' in cp['General']:
-                    cuenta_actual = cp['General']['LastPlayedUser']
-            except: pass
-                
-        return cuentas, cuenta_actual
-
 
     def actualizar_estado_interfaz(self):
         """Bloquea funcionalidad y efecto hover manteniendo el diseño visual."""
@@ -1164,17 +1316,30 @@ class ValorantConfigApp(ctk.CTk):
 
     def crear_backup_manual(self):
         if self.ruta_ini:
-            shutil.copy2(self.ruta_ini, self.ruta_ini + ".bak")
+            # Creamos un nombre único basado en el ID de la cuenta
+            id_cuenta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
+            nombre_bk = f"backup_{id_cuenta}.bak"
+            ruta_destino = os.path.join(self.folder_backups, nombre_bk)
+            
+            import shutil
+            shutil.copy2(self.ruta_ini, ruta_destino)
             messagebox.showinfo("Backup", self.idiomas[self.lang]["bk_exito"])
 
     def restaurar_backup(self):
         if not self.ruta_ini: return
-        path_bk = self.ruta_ini + ".bak"
+        # Construimos el nombre exacto que usamos al guardar
+        id_cuenta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
+        path_bk = os.path.join(self.folder_backups, f"backup_{id_cuenta}.bak")
+        
         if os.path.exists(path_bk):
+            import stat, shutil
+            # Quitamos el 'Solo lectura' de Riot para poder escribir el backup
             os.chmod(self.ruta_ini, stat.S_IWRITE)
             shutil.copy2(path_bk, self.ruta_ini)
             messagebox.showinfo("Backup", self.idiomas[self.lang]["bk_restaurado"])
             self.leer_datos_actuales()
+        else:
+            messagebox.showwarning("Backup", self.idiomas[self.lang]["bk_no_existe"])
 
     def actualizar_label_slider(self, v):
         valor = int(float(v))
@@ -1190,9 +1355,22 @@ class ValorantConfigApp(ctk.CTk):
         else:
             color = "#ff4655" # Rojo (Máximos FPS / Minecraft Mode)
 
-        # Cambiamos el color del número y de la bolita del slider
+    # Cambiamos el color del número y de la bolita del slider
         self.label_slider_num.configure(text_color=color)
         self.slider_calidad.configure(button_color=color, button_hover_color=color)
+
+    def guardar_pref_3d(self, v):
+        """Guarda la resolución 3D directamente en el Super JSON (profiles.json)."""
+        valor = int(float(v))
+        
+        # 1. Obtenemos el ID real de la cuenta seleccionada
+        id_real = self.extraer_id_real(self.combo_cuentas.get())
+        
+        # 2. Guardamos en el perfil de la cuenta dentro del Super JSON
+        self.guardar_en_super_json("accounts", id_real, "res_3d", valor)
+        
+        # 3. OPCIONAL: Actualizamos el valor global por defecto
+        self.guardar_en_super_json("config_global", None, "res_3d_default", valor)
 
     def on_combo_change(self, choice):
         m = re.search(r'(\d+)x(\d+)', choice)
@@ -1200,7 +1378,6 @@ class ValorantConfigApp(ctk.CTk):
             self.entry_x.delete(0, 'end'), self.entry_x.insert(0, m.group(1))
             self.entry_y.delete(0, 'end'), self.entry_y.insert(0, m.group(2))
             self.label_detect_x.configure(text=""), self.label_detect_y.configure(text="")
-
 
     def crear_acceso_directo_inicio(self):
         if not getattr(sys, 'frozen', False): return
