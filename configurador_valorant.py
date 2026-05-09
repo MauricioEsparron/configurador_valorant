@@ -1097,7 +1097,7 @@ class ValorantConfigApp(ctk.CTk):
                 alias_texto = datos_cuenta.get("alias", "") if isinstance(datos_cuenta, dict) else ""
                 
                 if alias_texto:
-                    nombre_final = f"{alias_texto} ({id_carpeta[:8]}...)"
+                    nombre_final = f"{alias_texto}  |  id: {id_carpeta}"
                 else:
                     nombre_final = id_carpeta
             else:
