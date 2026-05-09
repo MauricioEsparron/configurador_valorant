@@ -4,3 +4,4 @@ dist/
 *.pfx
 *.txt
 *.pdf
+*.json
