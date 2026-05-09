@@ -163,18 +163,31 @@ class ValorantConfigApp(ctk.CTk):
 
     # --- NUEVA FUNCIÓN PARA EL SELECTOR DE CUENTAS ---
     def obtener_todas_las_cuentas(self):
-        """Busca todas las carpetas de cuentas y detecta la última activa."""
-        import os
+        """Busca todas las carpetas de cuentas usando un filtro estricto de ID."""
+        
         ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
         cuentas = []
         cuenta_actual = ""
-        
+
+        # Este Regex busca EXACTAMENTE el patrón de cuenta: 
+        # 8-4-4-4-12 caracteres hexadecimales + el sufijo de región (latam, br, na, etc)
+        # Ejemplo que SI pasa: f98baca0-deaa-523e-81fe-fd250e49465c-latam
+        # Ejemplo que NO pasa: usuario-windows-31FFFD244817C1C09E2B4F93E9C9039F-latam
+        patron_cuenta_real = re.compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[a-zA-Z]+$')
+
         if os.path.exists(ruta_base):
             for nombre in os.listdir(ruta_base):
                 ruta_folder = os.path.join(ruta_base, nombre)
-                if os.path.isdir(ruta_folder) and "-" in nombre and "Windows" not in nombre and "CrashReport" not in nombre:
-                    cuentas.append(nombre)
-        
+                
+                # 1. Es carpeta
+                # 2. Cumple el patrón estricto de 5 guiones + región
+                # 3. Existe el archivo .ini dentro (Doble validación de seguridad)
+                if os.path.isdir(ruta_folder) and patron_cuenta_real.match(nombre):
+                    ruta_ini_check = os.path.join(ruta_folder, "WindowsClient", "GameUserSettings.ini")
+                    if os.path.exists(ruta_ini_check):
+                        cuentas.append(nombre)
+
+        # Lógica de detección de la cuenta activa
         ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
         if os.path.exists(ruta_riot):
             try:
@@ -185,7 +198,7 @@ class ValorantConfigApp(ctk.CTk):
                     cuenta_actual = cp['General']['LastPlayedUser']
             except:
                 pass
-
+                
         return cuentas, cuenta_actual
 
     # --- NUEVA FUNCIÓN PARA ACTUALIZAR LA RUTA ---
@@ -790,32 +803,45 @@ class ValorantConfigApp(ctk.CTk):
             self.actualizar_estado_interfaz() # <-- Añade esta línea al final
 
     def obtener_todas_las_cuentas(self):
-        """Busca todas las carpetas de cuentas y detecta la última activa."""
         import os
+        import getpass
+        import configparser
+        
+        # 1. Definimos las variables al inicio para evitar el error de "UnboundLocalError"
+        usuario_windows = getpass.getuser()
         ruta_base = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'VALORANT', 'Saved', 'Config')
         cuentas = []
-        cuenta_actual = ""
-        
-        # 1. Buscar todas las carpetas de cuentas
+        cuenta_actual = "" # <--- Esto arregla el error que te dio
+
+        # 2. Filtrado de carpetas (Tu lógica de "LIKE" inverso por usuario)
         if os.path.exists(ruta_base):
             for nombre in os.listdir(ruta_base):
-                ruta_folder = os.path.join(ruta_base, nombre)
-                if os.path.isdir(ruta_folder) and "-" in nombre and "Windows" not in nombre and "CrashReport" not in nombre:
+                # Ignoramos si empieza con el nombre de usuario de Windows
+                if nombre.lower().startswith(usuario_windows.lower()):
+                    continue
+                    
+                # Ignoramos carpetas de sistema conocidas
+                if nombre in ["Windows", "WindowsClient", "CrashReportClient"]:
+                    continue
+                
+                # Solo aceptamos si tiene el archivo .ini dentro
+                ruta_ini = os.path.join(ruta_base, nombre, "WindowsClient", "GameUserSettings.ini")
+                if os.path.exists(ruta_ini):
                     cuentas.append(nombre)
-        
-        # 2. Intentar detectar la cuenta activa por RiotLocalMachine
+
+        # 3. Detección de la cuenta activa (RiotLocalMachine.ini)
         ruta_riot = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Riot Games', 'Riot Client', 'Data', 'RiotLocalMachine.ini')
         if os.path.exists(ruta_riot):
             try:
-                import configparser
                 cp = configparser.ConfigParser()
                 cp.read(ruta_riot)
                 if 'General' in cp and 'LastPlayedUser' in cp['General']:
                     cuenta_actual = cp['General']['LastPlayedUser']
             except:
                 pass
-
+                
         return cuentas, cuenta_actual
+
 
     def actualizar_estado_interfaz(self):
         """Bloquea funcionalidad y efecto hover manteniendo el diseño visual."""
