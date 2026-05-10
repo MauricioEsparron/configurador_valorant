@@ -46,11 +46,16 @@ class ValorantConfigApp(ctk.CTk):
         # 4. Asegurar que existan las carpetas
         os.makedirs(self.folder_backups, exist_ok=True)
 
-        # 5. MIGRACIÓN Y CARGA DE SUPER JSON
+              # 5. MIGRACIÓN Y CARGA
         self.datos_pro = self.cargar_y_migrar_datos()
         
-        # Extraemos valor inicial del Super JSON (Configuración global)
+        # --- CARGAMOS LAS PREFERENCIAS GLOBALES DEL JSON ---
+        # 1. Resolución 3D
         self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
+        
+        # 2. Idioma (AÑADE ESTO AQUÍ)
+        # Si no existe en el JSON, ponemos "ES" por defecto
+        self.lang = self.datos_pro.get("config_global", {}).get("language", "ES")
 
         # --- CONFIGURACIÓN DE VENTANA ---
         self.title("VALORANT Stretched Res Configurator")
@@ -74,7 +79,7 @@ class ValorantConfigApp(ctk.CTk):
         # --- DICCIONARIOS DE IDIOMAS COMPLETOS ---
         self.idiomas = {
             "ES": {
-                "titulo": "VALORANT 4:3 CONFIG",
+                "titulo": "VALORANT TRUE STRETCHED CONFIG",
                 "cuenta_ok": "✅ Cuenta detectada:",
                 "cuenta_no": "❌ No se detectó cuenta activa",
                 "res_perso": "Resolución Personalizada",
@@ -92,7 +97,7 @@ class ValorantConfigApp(ctk.CTk):
                 "btn_crear_bk": "CREAR BACKUP",
                 "btn_restaurar_bk": "VOLVER A ANTERIOR",
                 "exito": "¡Configuración aplicada!\nResolución: {}x{}\nCalidad 3D: {}%",
-                "help_boost": "Fuerza parámetros gráficos ultra bajos que no están disponibles en los menús normales del juego, los cambios se aplicaran en: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTA: se definiran los valores en 0.",
+                "help_boost": "Fuerza parámetros gráficos ultra bajos que no están disponibles en los menús normales del juego, los cambios se aplicaran en: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTA: puedes definir los valores entre el 0 y el 5.",
                 "help_lock": "Pone el archivo en 'Solo Lectura' para que Valorant no cambie tus configuraciones cuando cierres el juego. \n\n⚠️ RECOMENDACIÓN: Desactiva esta opción durante actualizaciones de Valorant para evitar errores de parcheo.",
                 "bk_exito": "Backup creado con éxito.",
                 "bk_restaurado": "Se ha regresado a la versión guardada.",
@@ -106,7 +111,7 @@ class ValorantConfigApp(ctk.CTk):
                 "help_res": "Cambia la resolución de tu escritorio para que coincida con la del juego. Esto evita el parpadeo negro al hacer Alt+Tab.",
             },
             "EN": {
-                "titulo": "VALORANT 4:3 CONFIG",
+                "titulo": "VALORANT TRUE STRETCHED CONFIG",
                 "cuenta_ok": "✅ Account detected:",
                 "cuenta_no": "❌ No active account detected",
                 "res_perso": "Custom Resolution",
@@ -124,7 +129,7 @@ class ValorantConfigApp(ctk.CTk):
                 "btn_crear_bk": "CREATE BACKUP",
                 "btn_restaurar_bk": "RETURN TO PREVIOUS",
                 "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
-                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: All values will be set to 0.",
+                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: You can define the values ​​between 0 and 5.",
                 "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
                 "bk_exito": "Backup created successfully.",
                 "bk_restaurado": "Returned to previous version.",
@@ -376,29 +381,54 @@ class ValorantConfigApp(ctk.CTk):
         ctk.CTkButton(self.ventana_input, text="Guardar", command=confirmar).pack(pady=20)
 
     def abrir_ajustes_globales(self):
-        """Ventana para cambiar la ubicación de la carpeta de datos."""
+        """Ventana de ajustes con pestañas para una mejor organización."""
         ventana_adj = ctk.CTkToplevel(self)
         ventana_adj.title("Ajustes de Aplicación")
-        ventana_adj.geometry("500x300")
+        ventana_adj.geometry("550x450")
         ventana_adj.grab_set()
         ventana_adj.attributes("-topmost", True)
 
-        ctk.CTkLabel(ventana_adj, text="Configuración de Almacenamiento", font=("Arial", 14, "bold")).pack(pady=20)
-        
-        lbl_ruta = ctk.CTkLabel(ventana_adj, text=f"Ruta actual:\n{self.folder_data}", wraplength=400)
+        # Creamos el sistema de pestañas (Tabs)
+        tabview = ctk.CTkTabview(ventana_adj, width=500, height=400)
+        tabview.pack(padx=20, pady=10)
+
+        tabview.add("General")         # Para Idioma y personalización básica
+        tabview.add("Almacenamiento")  # Para la ruta de la carpeta Data
+        tabview.add("Apariencia")      # Para futuros temas (Dark/Light mode)
+
+        # --- PESTAÑA: GENERAL (Idioma) ---
+        lbl_lang = ctk.CTkLabel(tabview.tab("General"), text="Idioma de la aplicación:", font=("Arial", 12, "bold"))
+        lbl_lang.pack(pady=(20, 10))
+
+        # Reutilizamos tu Switch de idioma pero ahora dentro de la tuerquita
+        self.switch_lang_adj = ctk.CTkSwitch(
+            tabview.tab("General"), 
+            text="English / Español", 
+            command=self.cambiar_idioma,
+            progress_color="#ff4655"
+        )
+        # Sincronizamos el estado del switch con el idioma actual
+        if self.lang == "EN": self.switch_lang_adj.select()
+        self.switch_lang_adj.pack(pady=10)
+
+        # --- PESTAÑA: ALMACENAMIENTO ---
+        ctk.CTkLabel(tabview.tab("Almacenamiento"), text="Ubicación de la Carpeta de Datos", font=("Arial", 12, "bold")).pack(pady=20)
+        lbl_ruta = ctk.CTkLabel(tabview.tab("Almacenamiento"), text=f"Ruta actual:\n{self.folder_data}", wraplength=400)
         lbl_ruta.pack(pady=10)
 
         def cambiar_ruta():
             from tkinter import filedialog
             nueva_ruta = filedialog.askdirectory(title="Selecciona la nueva ubicación para /data")
             if nueva_ruta:
+                # Guardamos en la semilla y en el Super JSON
                 with open(self.archivo_semilla, "w") as f:
                     json.dump({"data_path": nueva_ruta}, f)
+                self.guardar_en_super_json("config_global", None, "data_path", nueva_ruta)
                 
-                messagebox.showinfo("Éxito", "Ruta actualizada. La aplicación se cerrará para aplicar los cambios.")
+                messagebox.showinfo("Éxito", "Ruta actualizada. Reinicia la aplicación.")
                 self.destroy()
 
-        ctk.CTkButton(ventana_adj, text="Cambiar Ubicación de Datos", command=cambiar_ruta).pack(pady=20)
+        ctk.CTkButton(tabview.tab("Almacenamiento"), text="Cambiar Ubicación", command=cambiar_ruta).pack(pady=20)
 
     def actualizar_listado_cuentas(self):
         """Refresca el ComboBox con los nuevos nombres."""
@@ -788,23 +818,25 @@ class ValorantConfigApp(ctk.CTk):
         self.btn_refresh.pack(side="left", padx=(0, 5))
 
         # Botón cambio idioma
-        self.switch_lang = ctk.CTkSwitch(
-            self.top_frame, 
-            text="English", 
-            command=self.cambiar_idioma,
-            progress_color="#ff4655" # Rojo VALORANT para el switch
-        )
-        self.switch_lang.pack(side="left")
+        # self.switch_lang = ctk.CTkSwitch(
+        #     self.top_frame, 
+        #     text="English", 
+        #     command=self.cambiar_idioma,
+        #     progress_color="#ff4655" # Rojo VALORANT para el switch
+        # )
+        # self.switch_lang.pack(side="left")
 
+        # Botón Configuración (Tuerquita)
         self.btn_config = ctk.CTkButton(
-        self.top_frame,
-        text="⚙", # Puedes usar un icono si tienes uno (ej. self.img_config)
-        width=32,
-        height=32,
-        corner_radius=16,
-        fg_color="transparent",
-        hover_color="#333333",
-        command=self.abrir_ajustes_globales # Función que crearemos ahora
+            self.top_frame,
+            text="⚙",
+            width=32,
+            height=32,
+            corner_radius=16,
+            fg_color="transparent",
+            hover_color="#333333",
+            font=("Arial", 18),
+            command=self.abrir_ajustes_globales
         )
         self.btn_config.pack(side="left", padx=(0, 5))
 
@@ -1022,7 +1054,16 @@ class ValorantConfigApp(ctk.CTk):
         btn.pack(side="left", padx=10)
 
     def cambiar_idioma(self):
-        self.lang = "EN" if self.switch_lang.get() == 1 else "ES"
+            # Intentamos leer del switch de la tuerquita
+        try:
+            # Si el switch existe y está disponible, actualizamos self.lang
+            self.lang = "EN" if self.switch_lang_adj.get() == 1 else "ES"
+            # Guardamos la preferencia en el Super JSON
+            self.guardar_en_super_json("config_global", None, "language", self.lang)
+        except (AttributeError, NameError):
+            # Si el switch no existe (porque la tuerquita está cerrada), 
+            # mantenemos el idioma que ya tiene self.lang (el del Super JSON)
+            pass
         t = self.idiomas[self.lang]
         
         # --- Actualización de textos de la interfaz ---
@@ -1042,24 +1083,20 @@ class ValorantConfigApp(ctk.CTk):
         self.combo_res.configure(values=t["opciones"])
         self.check_res_windows.configure(text=t["res_win"])
         
-        if self.combo_res.get() in ["", "CTkComboBox"]:
+        if self.combo_res.get() in ["", "CTkComboBox", "Seleccionar Resolución", "Select Resolution"]:
             self.combo_res.set(t["combo_init"])
 
         # --- SECCIÓN DE CUENTAS (Lógica de Alias unificada) ---
         if self.ruta_ini:
-            # 1. Extraer ID real de la carpeta
             id_carpeta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
-            
-            # 2. Verificar si este ID tiene datos guardados en el Super JSON
             alias_dict = self.cargar_alias()
             
             if id_carpeta in alias_dict:
                 datos_cuenta = alias_dict[id_carpeta]
-                # EXTRAEMOS SOLO EL TEXTO DEL ALIAS
-                # Si datos_cuenta es un dict, sacamos 'alias'; si no, lo usamos tal cual
                 alias_texto = datos_cuenta.get("alias", "") if isinstance(datos_cuenta, dict) else ""
                 
                 if alias_texto:
+                    # Mantenemos el formato Pro de la barra vertical
                     nombre_final = f"{alias_texto}  |  id: {id_carpeta}"
                 else:
                     nombre_final = id_carpeta
@@ -1068,16 +1105,14 @@ class ValorantConfigApp(ctk.CTk):
 
             self.label_cuenta_fija.configure(
                 text=t["cuenta_ok"], 
-                text_color="#4ade80",
+                text_color="#4ade80", 
                 font=("Segoe UI", 12, "bold")
             )
-            # Ponemos el nombre limpio (o ID) en el combo
             self.combo_cuentas.set(nombre_final)
         else:
-            # Caso cuando no se detecta ninguna cuenta
             self.label_cuenta_fija.configure(
                 text=t["cuenta_no"], 
-                text_color="#f87171",
+                text_color="#f87171", 
                 font=("Segoe UI", 12, "bold")
             )
             self.combo_cuentas.set("")
