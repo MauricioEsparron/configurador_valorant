@@ -59,6 +59,11 @@
   "btn_guardar": "Speichern",
   "btn_cancelar": "Abbrechen",
   "btn_cerrar": "Schließen",
+  "tab_About": "Über",
+  "creditos_por": "Entwickelt von",
+  "donaciones_titulo": "Projekt unterstützen",
+  "donar_crypto": "Mit Krypto spenden",
+  "btn_cerrar": "Schließen",
 
   "ultra_fps_titulo": "Ultra FPS Optionen",
   "elige_opt": "Optimierungstyp wählen:",

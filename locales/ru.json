@@ -59,6 +59,11 @@
   "btn_guardar": "Сохранить",
   "btn_cancelar": "Отмена",
   "btn_cerrar": "Закрыть",
+  "tab_About": "О программе",
+  "creditos_por": "Разработано",
+  "donaciones_titulo": "Поддержать проект",
+  "donar_crypto": "Пожертвовать в криптовалюте",
+  "btn_cerrar": "Закрыть",
 
   "ultra_fps_titulo": "Опции Ultra FPS",
   "elige_opt": "Выберите тип оптимизации:",

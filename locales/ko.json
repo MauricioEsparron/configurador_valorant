@@ -59,6 +59,11 @@
   "btn_guardar": "저장",
   "btn_cancelar": "취소",
   "btn_cerrar": "닫기",
+  "tab_About": "정보",
+  "creditos_por": "개발자:",
+  "donaciones_titulo": "프로젝트 후원하기",
+  "donar_crypto": "암호화폐로 후원하기",
+  "btn_cerrar": "닫기",
 
   "ultra_fps_titulo": "울트라 FPS 옵션",
   "elige_opt": "최적화 유형을 선택하세요:",

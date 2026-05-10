@@ -367,12 +367,14 @@ class ValorantConfigApp(ctk.CTk):
 
         # 1. GUARDAMOS NOMBRES Y AÑADIMOS PESTAÑAS
         name_gen = t.get("tab_general", "General")
-        name_alm = t.get("tab_storage", "Almacenamiento")
-        name_apa = t.get("tab_appearance", "Apariencia")
+        name_alm = t.get("tab_storage", "Storage")
+        # name_apa = t.get("tab_appearance", "Appearance")
+        name_abo = t.get("tab_About", "About")
 
         self.tabview_adj.add(name_gen)
         self.tabview_adj.add(name_alm)
-        self.tabview_adj.add(name_apa)
+        # self.tabview_adj.add(name_apa)
+        self.tabview_adj.add(name_abo)
 
         # 2. CONTENIDO PESTAÑA: GENERAL
         tab_gen = self.tabview_adj.tab(name_gen)
@@ -408,6 +410,19 @@ class ValorantConfigApp(ctk.CTk):
         self.btn_cambiar_ruta = ctk.CTkButton(tab_alm, command=cambiar_ruta_interna)
         self.btn_cambiar_ruta.pack(pady=20)
 
+        # 3. CONTENIDO PESTAÑA: APARIENCIA
+        # name_apa = self.tabview_adj.tab(name_alm)
+        # self.lbl_titulo_ruta = ctk.CTkLabel(tab_alm, text="", font=("Arial", 12, "bold"))
+        # self.lbl_titulo_ruta.pack(pady=20)
+        
+        # 4. CONTENIDO PESTAÑA: ACERCA DE (About)
+        tab_abo = self.tabview_adj.tab(name_abo)
+        
+        # Nombre del Desarrollador
+        ctk.CTkLabel(tab_abo, text="VALORANT TRUE STRETCHED CONFIGURATOR", font=("Segoe UI", 16, "bold"), text_color="#ff4655").pack(pady=(10, 0))
+        ctk.CTkLabel(tab_abo, text=f"v2.0.0 | {t.get('creditos_por', 'Developed by')}", font=("Segoe UI", 10)).pack()
+        ctk.CTkLabel(tab_abo, text="Mauricio Ramirez", font=("Segoe UI", 14, "bold")).pack(pady=(0, 10))
+
         # 4. CONFIGURACIÓN DE IDIOMAS Y BOTONES
         self.diccionario_global_idiomas = {
             "ES": "Español", "EN": "English", "FR": "Français", "DE": "Deutsch",
@@ -420,6 +435,77 @@ class ValorantConfigApp(ctk.CTk):
 
         # 5. TRADUCCIÓN FINAL (Ahora sí, todos los objetos existen)
         self.retranslate_ajustes()
+
+        # Botón de GitHub
+        def abrir_github():
+            import webbrowser
+            webbrowser.open("https://github.com/MauricioEsparron/configurador_valorant/tree/main")
+
+        self.btn_github = ctk.CTkButton(tab_abo, text="GitHub Repository", fg_color="#24292e", hover_color="#333", 
+                                        command=abrir_github)
+        self.btn_github.pack(pady=10)
+
+        # Sección de Donaciones
+        ctk.CTkLabel(tab_abo, text=t.get("donaciones_titulo", "Support the Project"), font=("Segoe UI", 12, "bold")).pack(pady=(10, 5))
+        
+        frame_donaciones = ctk.CTkFrame(tab_abo, fg_color="transparent")
+        frame_donaciones.pack(pady=5)
+
+        def abrir_link(url):
+            import webbrowser
+            webbrowser.open(url)
+
+        # Opción 1: PayPal
+        self.btn_paypal = ctk.CTkButton(frame_donaciones, text="PayPal", width=100, fg_color="#003087", 
+                                            command=lambda: abrir_link("https://paypal.me/mauramirezesparron"))
+        self.btn_paypal.pack(side="left", padx=5)
+
+        # Opción 2: Ko-fi / BuyMeACoffee
+        self.btn_kofi = ctk.CTkButton(frame_donaciones, text="Ko-fi", width=100, fg_color="#29abe0", 
+                                        command=lambda: abrir_link("https://buymeacoffee.com/maxpredator01"))
+        self.btn_kofi.pack(side="left", padx=5)
+
+        # Opción 3: Binance Pay (Llama a la función del QR)
+        self.btn_otros = ctk.CTkButton(frame_donaciones, text="Binance Pay", width=100, fg_color="#f7931a", 
+                                        command=self.mostrar_qr_binance) # <--- CAMBIO AQUÍ
+        self.btn_otros.pack(side="left", padx=5)    
+
+    def mostrar_qr_binance(self):
+        """Abre una ventana emergente con el código QR de Binance."""
+        from PIL import Image
+        import os
+        
+        # 1. Crear la ventana popup
+        vent_qr = ctk.CTkToplevel(self)
+        vent_qr.title(self.tr("donar_crypto", "Donate with Crypto"))
+        vent_qr.geometry("400x600") # Un poco más alto para que quepa el botón abajo
+        vent_qr.resizable(False, False)
+        vent_qr.grab_set() 
+        vent_qr.attributes("-topmost", True)
+
+        # 2. Cargar la imagen
+        ruta_qr = resource_path("binance_pay.png") # Asegúrate que el nombre coincida
+        
+        if os.path.exists(ruta_qr):
+            # Usamos Pillow para abrir la imagen
+            pil_img = Image.open(ruta_qr)
+            
+            # Ajustamos el tamaño visual en la app (350x480 aprox para mantener proporción)
+            img_qr = ctk.CTkImage(
+                light_image=pil_img,
+                dark_image=pil_img,
+                size=(350, 480)
+            )
+            
+            lbl_img = ctk.CTkLabel(vent_qr, image=img_qr, text="")
+            lbl_img.pack(pady=20, padx=20)
+        else:
+            ctk.CTkLabel(vent_qr, text="Error: binance_pay.png not found").pack(pady=50)
+
+        # 3. Botón para cerrar (Traducido)
+        ctk.CTkButton(vent_qr, text=self.tr("btn_cerrar", "Close"), 
+                    command=vent_qr.destroy).pack(pady=(0, 20))
+
 
     def retranslate_ajustes(self):
         """Actualiza los textos de la ventana de ajustes."""

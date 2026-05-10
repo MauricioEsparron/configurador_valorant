@@ -59,6 +59,11 @@
   "btn_guardar": "Save",
   "btn_cancelar": "Cancel",
   "btn_cerrar": "Close",
+  "tab_About": "About",
+  "creditos_por": "Developed by",
+  "donaciones_titulo": "Support the Project",
+  "donar_crypto": "Donate with Crypto",
+  "btn_cerrar": "Close",
   
   "ultra_fps_titulo": "Ultra FPS Options",
   "elige_opt": "Choose optimization type:",

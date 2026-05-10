@@ -59,6 +59,11 @@
   "btn_guardar": "保存",
   "btn_cancelar": "キャンセル",
   "btn_cerrar": "閉じる",
+  "tab_About": "詳細",
+  "creditos_por": "開発者:",
+  "donaciones_titulo": "プロジェクトを支援する",
+  "donar_crypto": "仮想通貨で寄付する",
+  "btn_cerrar": "閉じる",
 
   "ultra_fps_titulo": "究極 FPS オプション",
   "elige_opt": "最適化タイプを選択してください:",

@@ -59,6 +59,11 @@
   "btn_guardar": "保存",
   "btn_cancelar": "取消",
   "btn_cerrar": "关闭",
+  "tab_About": "关于",
+  "creditos_por": "开发者:",
+  "donaciones_titulo": "支持该项目",
+  "donar_crypto": "通过加密货币捐赠",
+  "btn_cerrar": "关闭",
 
   "ultra_fps_titulo": "极致 FPS 选项",
   "elige_opt": "选择优化类型：",
