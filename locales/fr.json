@@ -59,7 +59,21 @@
   "btn_guardar": "Enregistrer",
   "btn_cancelar": "Annuler",
   "btn_cerrar": "Fermer",
+
   "ultra_fps_titulo": "Options Ultra FPS",
+  "elige_opt": "Choisir le type d'optimisation :",
+  "btn_fps_defecto": "Par défaut (Tout à 0)",
+  "btn_guardar_custom": "APPLIQUER LA CONFIGURATION PERSONNALISÉE",
+  "ViewDistance": "Distance d'affichage",
+  "AntiAliasing": "Anti-aliasing",
+  "Shadow": "Ombres",
+  "PostProcess": "Post-traitement",
+  "Texture": "Textures",
+  "Effects": "Effets",
+  "Foliage": "Feuillage",
+  "Shading": "Ombrage",
+  "GlobalIllumination": "Illumination globale",
+  "Reflection": "Reflets",
 
   "opciones": [
     "1920x1440 (Haute / 2K)",

@@ -42,7 +42,7 @@
   "help_lock": "Define o arquivo como 'Somente Leitura' para evitar alterações automáticas.",
   "help_res": "Altera a resolução da área de trabalho para corresponder à do jogo.",
 
-  "bk_exito": "Backup creado com sucesso.",
+  "bk_exito": "Backup criado com sucesso.",
   "bk_restaurado": "Retornado à versão anterior.",
   "bk_no_existe": "Nenhum backup anterior encontrado.",
 
@@ -59,7 +59,21 @@
   "btn_guardar": "Salvar",
   "btn_cancelar": "Cancelar",
   "btn_cerrar": "Fechar",
+
   "ultra_fps_titulo": "Opções Ultra FPS",
+  "elige_opt": "Escolha o tipo de otimização:",
+  "btn_fps_defecto": "Padrão (Tudo em 0)",
+  "btn_guardar_custom": "APLICAR CONFIGURAÇÃO PERSONALIZADA",
+  "ViewDistance": "Distância de Visão",
+  "AntiAliasing": "Anti-Aliasing",
+  "Shadow": "Sombras",
+  "PostProcess": "Pós-Processamento",
+  "Texture": "Texturas",
+  "Effects": "Efeitos",
+  "Foliage": "Folhagem",
+  "Shading": "Sombreamento",
+  "GlobalIllumination": "Iluminação Global",
+  "Reflection": "Reflexos",
 
   "opciones": [
     "1920x1440 (Alta / 2K)",

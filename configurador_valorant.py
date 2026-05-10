@@ -583,22 +583,20 @@ class ValorantConfigApp(ctk.CTk):
 
         # --- Crear ventana secundaria modal ---
         self.popup = ctk.CTkToplevel(self)
-        self.popup.title("Opciones de Impulso FPS")
+        self.popup.title(self.tr("ultra_fps_titulo", "Ultra FPS Options"))
         self.popup.geometry("450x580")
         self.popup.resizable(False, False)
         self.popup.grab_set() 
         self.popup.attributes("-topmost", True)
 
-        lbl_info = ctk.CTkLabel(self.popup, text="Elige el tipo de optimización:", font=("Segoe UI", 14, "bold"))
+        lbl_info = ctk.CTkLabel(self.popup, text=self.tr("elige_opt", "Choose optimization type:"), font=("Segoe UI", 14, "bold"))
         lbl_info.pack(pady=10)
 
         # Botones Principales
         frame_btns = ctk.CTkFrame(self.popup, fg_color="transparent")
         frame_btns.pack(pady=5)
         
-        btn_defecto = ctk.CTkButton(frame_btns, text="Predeterminado (Todo en 0)", 
-                                   fg_color="#ff4655", hover_color="#a12d36", 
-                                   command=self.aplicar_fps_defecto)
+        btn_defecto = ctk.CTkButton(frame_btns, text=self.tr("btn_fps_defecto", "Default (All 0)"), fg_color="#ff4655", hover_color="#a12d36", command=self.aplicar_fps_defecto)
         btn_defecto.pack(side="left", padx=10)
 
         # Frame contenedor para los inputs manuales
@@ -612,29 +610,27 @@ class ValorantConfigApp(ctk.CTk):
             return False
         vcmd = (self.popup.register(validar_0_5), '%P')
 
-        # 3. Generar los campos con los VALORES PRECARGADOS DEL JSON
         self.entries_fps = {}
         for p in self.parametros_fps:
             row_frame = ctk.CTkFrame(self.frame_manual, fg_color="transparent")
             row_frame.pack(fill="x", padx=10, pady=1)
             
-            lbl_p = ctk.CTkLabel(row_frame, text=p.replace("sg.", ""), font=("Segoe UI", 10), width=150, anchor="w")
+            # Lógica de traducción de etiquetas técnicas:
+            # Quitamos "sg." y "Quality" para buscar en el diccionario (ej: "Shadow")
+            nombre_limpio = p.replace("sg.", "").replace("Quality", "")
+            # Buscamos en el JSON, si no existe, usamos el nombre limpio como fallback
+            texto_label = self.tr(nombre_limpio, nombre_limpio)
+            
+            lbl_p = ctk.CTkLabel(row_frame, text=texto_label, font=("Segoe UI", 10), width=150, anchor="w")
             lbl_p.pack(side="left")
             
             entry_p = ctk.CTkEntry(row_frame, width=50, height=22, validate="key", validatecommand=vcmd)
-            
-            # AQUÍ ESTÁ EL TRUCO: Sacamos el valor de 'valores_previuos'
             valor_a_mostrar = valores_previuos.get(p, "0")
             entry_p.insert(0, str(valor_a_mostrar))
             entry_p.pack(side="right")
             self.entries_fps[p] = entry_p
 
-        btn_guardar_custom = ctk.CTkButton(
-            self.popup, text="APLICAR CONFIGURACIÓN PERSONALIZADA",
-            fg_color="#4ade80", hover_color="#22c55e", text_color="#000",
-            font=("Segoe UI", 12, "bold"), height=40, width=380,
-            command=self.aplicar_fps_personalizado
-        )
+        btn_guardar_custom = ctk.CTkButton(self.popup, text=self.tr("btn_guardar_custom", "APPLY CUSTOM CONFIGURATION"), fg_color="#4ade80", hover_color="#22c55e", text_color="#000", font=("Segoe UI", 12, "bold"), height=40, width=380, command=self.aplicar_fps_personalizado)
         btn_guardar_custom.pack(pady=20)
 
         def al_cerrar():

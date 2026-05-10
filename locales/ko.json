@@ -59,7 +59,21 @@
   "btn_guardar": "저장",
   "btn_cancelar": "취소",
   "btn_cerrar": "닫기",
+
   "ultra_fps_titulo": "울트라 FPS 옵션",
+  "elige_opt": "최적화 유형을 선택하세요:",
+  "btn_fps_defecto": "기본 설정 (모두 0)",
+  "btn_guardar_custom": "사용자 정의 설정 적용",
+  "ViewDistance": "시야 거리",
+  "AntiAliasing": "안티에일리어싱",
+  "Shadow": "그림자 품질",
+  "PostProcess": "포스트 프로세싱",
+  "Texture": "텍스처 품질",
+  "Effects": "이펙트 품질",
+  "Foliage": "식물/디테일",
+  "Shading": "쉐이딩 품질",
+  "GlobalIllumination": "글로벌 일루미네이션",
+  "Reflection": "반사 품질",
 
   "opciones": [
     "1920x1440 (높음 / 2K)",

@@ -43,7 +43,7 @@
   "help_res": "Cambia la risoluzione del desktop per farla corrispondere a quella del gioco.",
 
   "bk_exito": "Backup creato correttamente.",
-  "bk_restaurado": "Ripristinata la versione precedente.",
+  "bk_restaurado": "Ripristinata la version precedente.",
   "bk_no_existe": "Nessun backup precedente trovato.",
 
   "ajustes_titulo": "Impostazioni Applicazione",
@@ -59,7 +59,21 @@
   "btn_guardar": "Salva",
   "btn_cancelar": "Annulla",
   "btn_cerrar": "Chiudi",
+
   "ultra_fps_titulo": "Opzioni Ultra FPS",
+  "elige_opt": "Scegli il tipo di ottimizzazione:",
+  "btn_fps_defecto": "Predefinito (Tutto a 0)",
+  "btn_guardar_custom": "APPLICA CONFIGURAZIONE PERSONALIZZATA",
+  "ViewDistance": "Distanza di Visualizzazione",
+  "AntiAliasing": "Anti-aliasing",
+  "Shadow": "Ombre",
+  "PostProcess": "Post-elaborazione",
+  "Texture": "Texture",
+  "Effects": "Effetti",
+  "Foliage": "Fogliame",
+  "Shading": "Ombreggiatura",
+  "GlobalIllumination": "Illuminazione Globale",
+  "Reflection": "Riflessi",
 
   "opciones": [
     "1920x1440 (Alta / 2K)",

@@ -59,7 +59,21 @@
   "btn_guardar": "保存",
   "btn_cancelar": "取消",
   "btn_cerrar": "关闭",
+
   "ultra_fps_titulo": "极致 FPS 选项",
+  "elige_opt": "选择优化类型：",
+  "btn_fps_defecto": "默认 (全部为 0)",
+  "btn_guardar_custom": "应用自定义配置",
+  "ViewDistance": "可视距离",
+  "AntiAliasing": "抗锯齿",
+  "Shadow": "阴影质量",
+  "PostProcess": "后期处理",
+  "Texture": "纹理质量",
+  "Effects": "特效质量",
+  "Foliage": "细节/植被",
+  "Shading": "着色质量",
+  "GlobalIllumination": "全局光照",
+  "Reflection": "反射质量",
 
   "opciones": [
     "1920x1440 (高 / 2K)",

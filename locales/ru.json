@@ -59,7 +59,21 @@
   "btn_guardar": "Сохранить",
   "btn_cancelar": "Отмена",
   "btn_cerrar": "Закрыть",
+
   "ultra_fps_titulo": "Опции Ultra FPS",
+  "elige_opt": "Выберите тип оптимизации:",
+  "btn_fps_defecto": "По умолчанию (все на 0)",
+  "btn_guardar_custom": "ПРИМЕНИТЬ ПОЛЬЗОВАТЕЛЬСКИЕ НАСТРОЙКИ",
+  "ViewDistance": "Дальность прорисовки",
+  "AntiAliasing": "Сглаживание",
+  "Shadow": "Тени",
+  "PostProcess": "Постобработка",
+  "Texture": "Текстуры",
+  "Effects": "Эффекты",
+  "Foliage": "Растительность",
+  "Shading": "Затененность",
+  "GlobalIllumination": "Глобальное освещение",
+  "Reflection": "Отражения",
 
   "opciones": [
     "1920x1440 (Высокое / 2K)",

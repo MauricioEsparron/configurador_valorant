@@ -59,7 +59,21 @@
   "btn_guardar": "Save",
   "btn_cancelar": "Cancel",
   "btn_cerrar": "Close",
+  
   "ultra_fps_titulo": "Ultra FPS Options",
+  "elige_opt": "Choose optimization type:",
+  "btn_fps_defecto": "Default (All 0)",
+  "btn_guardar_custom": "APPLY CUSTOM CONFIGURATION",
+  "ViewDistance": "View Distance",
+  "AntiAliasing": "Anti-Aliasing",
+  "Shadow": "Shadows",
+  "PostProcess": "Post-Processing",
+  "Texture": "Textures",
+  "Effects": "Effects",
+  "Foliage": "Foliage",
+  "Shading": "Shading",
+  "GlobalIllumination": "Global Illumination",
+  "Reflection": "Reflections",
 
   "opciones": [
     "1920x1440 (High / 2K)",
