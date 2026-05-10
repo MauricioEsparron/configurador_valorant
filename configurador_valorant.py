@@ -30,6 +30,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class ValorantConfigApp(ctk.CTk):
+
+    def tr(self, clave, fallback=""):
+            """Obtiene una traducción segura según el idioma actual."""
+            return self.idiomas.get(self.lang, {}).get(clave, fallback)
+
     def __init__(self):
         super().__init__()   
         
@@ -278,7 +283,10 @@ class ValorantConfigApp(ctk.CTk):
         
         seleccion = self.combo_cuentas.get()
         if not seleccion:
-            messagebox.showwarning("Atención", "Selecciona una cuenta primero.")
+            messagebox.showwarning(
+                self.tr("msg_aviso_titulo", "Warning"),
+                self.tr("selecciona_cuenta", "Select an account first.")
+            )
             return
 
         id_real = self.extraer_id_real(seleccion)
@@ -311,7 +319,10 @@ class ValorantConfigApp(ctk.CTk):
             
             # 1. Validaciones
             if len(nuevo_alias) < 3 or len(nuevo_alias) > 30:
-                messagebox.showerror("Error", "Debe tener entre 3 y 30 caracteres.")
+                messagebox.showerror(
+                    self.tr("msg_error_titulo", "Error"),
+                    self.tr("error_nombre_longitud", "Must be between 3 and 30 characters.")
+                )
                 return
 
             otros_alias = []
@@ -320,7 +331,10 @@ class ValorantConfigApp(ctk.CTk):
                     otros_alias.append(datos.get("alias", "").lower())
 
             if nuevo_alias.lower() in otros_alias:
-                messagebox.showerror("Error", "Este nombre ya lo usa otra cuenta.")
+                messagebox.showerror(
+                    self.tr("msg_error_titulo", "Error"),
+                    self.tr("error_nombre_duplicado", "This name is already used by another account.")
+                )
                 return
 
             # 1. GUARDAR EN DISCO
@@ -340,7 +354,10 @@ class ValorantConfigApp(ctk.CTk):
             self.combo_cuentas.set(nombre_formateado)
 
             self.ventana_input.destroy()
-            messagebox.showinfo("Éxito", "Nombre actualizado.")
+            messagebox.showinfo(
+                self.tr("msg_exito_titulo", "Success"),
+                self.tr("nombre_actualizado", "Name updated.")
+            )
 
         ctk.CTkButton(self.ventana_input, text="Guardar", command=confirmar).pack(pady=20)
 
@@ -404,7 +421,11 @@ class ValorantConfigApp(ctk.CTk):
                     json.dump({"data_path": nueva_ruta}, f)
                 self.guardar_en_super_json("config_global", None, "data_path", nueva_ruta)
                 
-                messagebox.showinfo("Éxito", "Ruta actualizada. Reinicia la aplicación.")
+                messagebox.showinfo(
+                    self.tr("msg_exito_titulo", "Success"),
+                    self.tr("ruta_actualizada", "Path updated. Restart the application.")
+                )
+
                 self.destroy()
 
         ctk.CTkButton(tabview.tab("Almacenamiento"), text="Cambiar Ubicación", command=cambiar_ruta).pack(pady=20)
@@ -510,7 +531,10 @@ class ValorantConfigApp(ctk.CTk):
                 self.guardar_en_super_json("accounts", id_real, "fps_boost", fps_data)
                 
                 # Mostramos el mensaje de confirmación
-                messagebox.showinfo("VALORANT Config", "Se han restaurado los valores originales con éxito.")
+                messagebox.showinfo(
+                    self.tr("msg_valorant_config_titulo", "VALORANT Config"),
+                    self.tr("valores_restaurados", "Original values have been successfully restored.")
+                )
 
     def abrir_ventana_opciones_fps(self):
         """Abre un popup cargando los valores directamente desde el Super JSON."""
@@ -661,7 +685,10 @@ class ValorantConfigApp(ctk.CTk):
             config.write(f, space_around_delimiters=False)
             
         self.popup.destroy()
-        messagebox.showinfo("Éxito", "Configuración guardada en tu perfil unificado.")
+        messagebox.showinfo(
+            self.tr("msg_exito_titulo", "Success"),
+            self.tr("perfil_guardado", "Configuration saved to your unified profile.")
+        )
 
     # --- LÓGICA DE DETECCIÓN ORIGINAL ---
     def obtener_ruta_activa(self):
@@ -1053,7 +1080,7 @@ class ValorantConfigApp(ctk.CTk):
         """Busca el JSON de idioma. Si no existe, devuelve un backup básico."""
         import json
         # Construimos la ruta: data/locales/es.json (por ejemplo)
-        ruta = os.path.join(self.folder_data, "locales", f"{codigo.lower()}.json")
+        ruta = resource_path(os.path.join("locales", f"{codigo.lower()}.json"))
         
         if os.path.exists(ruta):
             try:
@@ -1065,36 +1092,104 @@ class ValorantConfigApp(ctk.CTk):
                 # BACKUP: Diccionario completo para evitar KeyErrors
         return {
             "titulo": "VALORANT TRUE STRETCHED CONFIG",
-                "cuenta_ok": "✅ Account detected:",
-                "cuenta_no": "❌ No active account detected",
-                "res_perso": "Custom Resolution",
-                "ancho": "Width (X):",
-                "alto": "Height (Y):",
-                "detectado": "← Detected",
-                "sugeridas": "Suggested resolutions:",
-                "btn_aplicar": "APPLY CONFIGURATION",
-                "footer": "Close the game before applying changes",
-                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
-                "combo_init": "Select resolution...",
-                "boost": "Ultra FPS Boost",
-                "bloquear": "Lock File (Read Only)",
-                "calidad_res": "3D Resolution Quality:",
-                "btn_crear_bk": "CREATE BACKUP",
-                "btn_restaurar_bk": "RETURN TO PREVIOUS",
-                "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
-                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: You can define the values ​​between 0 and 5.",
-                "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
-                "bk_exito": "Backup created successfully.",
-                "bk_restaurado": "Returned to previous version.",
-                "bk_no_existe": "No previous backup found.",
-                "opciones": [
-                    "1920x1440 (High / 2K)", "1600x1200 (High / Standard)", "1440x1080 (Ideal for 1080p monitors)",
-                    "1280x960 (Balanced / Popular)", "1152x864 (Medium Quality)", "1024x768 (Low / +FPS Performance)",
-                    "800x600 (Extreme / Low-end PC)", "640x480 (Minimum)"
-                ],
-                "res_win": "Sync Windows",
-                "help_res": "Changes your desktop resolution to match the game. This prevents the black screen flicker when Alt-Tabbing.",
-            } 
+            "cuenta_ok": "✅ Account detected:",
+            "cuenta_no": "❌ No active account detected",
+            "res_perso": "Custom Resolution",
+            "ancho": "Width (X):",
+            "alto": "Height (Y):",
+            "detectado": "← Detected",
+            "sugeridas": "Suggested resolutions:",
+            "btn_aplicar": "APPLY CONFIGURATION",
+            "footer": "Close the game before applying changes",
+            "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
+            "combo_init": "Select resolution...",
+            "boost": "Ultra FPS Boost",
+            "bloquear": "Lock File (Read Only)",
+            "calidad_res": "3D Resolution Quality:",
+            "btn_crear_bk": "CREATE BACKUP",
+            "btn_restaurar_bk": "RETURN TO PREVIOUS",
+            "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
+
+            # =========================
+            # TITLES / HEADERS
+            # =========================
+            "msg_exito_titulo": "Success",
+            "msg_error_titulo": "Error",
+            "msg_aviso_titulo": "Warning",
+            "msg_backup_titulo": "Backup",
+            "msg_valorant_titulo": "VALORANT",
+            "msg_valorant_config_titulo": "VALORANT Config",
+            "msg_windows_display_titulo": "Windows Display",
+
+            # =========================
+            # INFO MESSAGES
+            # =========================
+            "nombre_actualizado": "Name updated.",
+            "ruta_actualizada": "Path updated. Restart the application.",
+            "valores_restaurados": "Original values have been successfully restored.",
+            "perfil_guardado": "Configuration saved to your unified profile.",
+
+            # =========================
+            # WARNING MESSAGES
+            # =========================
+            "selecciona_cuenta": "Select an account first.",
+            "archivo_no_encontrado": "Configuration file not found.",
+
+            # =========================
+            # ERROR MESSAGES
+            # =========================
+            "error_nombre_longitud": "Must be between 3 and 30 characters.",
+            "error_nombre_duplicado": "This name is already used by another account.",
+            "error_abrir_archivo": "Could not open file: {}",
+            "system_error": "Error: {}",
+
+            # =========================
+            # SETTINGS / HELP
+            # =========================
+            "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: You can define the values between 0 and 5.",
+
+            "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
+
+            "help_res": "Changes your desktop resolution to match the game. This prevents the black screen flicker when Alt-Tabbing.",
+
+            # =========================
+            # BACKUP
+            # =========================
+            "bk_exito": "Backup created successfully.",
+            "bk_restaurado": "Returned to previous version.",
+            "bk_no_existe": "No previous backup found.",
+
+            # =========================
+            # EXTRA UI (Recommended)
+            # =========================
+            "ajustes_titulo": "Application Settings",
+            "tab_idioma": "Language",
+            "buscar_idioma": "Search language...",
+            "idioma_global": "Global Language",
+            "btn_guardar": "Save",
+            "btn_cancelar": "Cancel",
+            "btn_cerrar": "Close",
+            "ultra_fps_titulo": "Ultra FPS Options",
+
+            # =========================
+            # RESOLUTION OPTIONS
+            # =========================
+            "opciones": [
+                "1920x1440 (High / 2K)",
+                "1600x1200 (High / Standard)",
+                "1440x1080 (Ideal for 1080p monitors)",
+                "1280x960 (Balanced / Popular)",
+                "1152x864 (Medium Quality)",
+                "1024x768 (Low / +FPS Performance)",
+                "800x600 (Extreme / Low-end PC)",
+                "640x480 (Minimum)"
+            ],
+
+            # =========================
+            # WINDOWS SYNC
+            # =========================
+            "res_win": "Sync Windows"
+        }
 
     def crear_soc(self, img, color, url):
         btn = ctk.CTkButton(self.frame_social, text="", image=img, fg_color=color, hover_color=color, width=48, height=48, corner_radius=10, command=lambda: webbrowser.open(url))
@@ -1229,7 +1324,10 @@ class ValorantConfigApp(ctk.CTk):
                    "'APPLY CONFIGURATION'.")
             
             from tkinter import messagebox
-            messagebox.showinfo(titulo, msg)
+            messagebox.showinfo(
+                titulo,
+                msg
+            )
             
             # 2. Liberamos el bloqueo después de que el usuario cierra el mensaje
             self.after(500, lambda: setattr(self, 'bloqueo_en_progreso', False))
@@ -1374,14 +1472,20 @@ class ValorantConfigApp(ctk.CTk):
                 mensaje_final = "La configuración ya estaba aplicada." if self.lang == "ES" else "Settings were already applied."
 
             from tkinter import messagebox
-            messagebox.showinfo("VALORANT", mensaje_final)
+            messagebox.showinfo(
+                self.tr("msg_valorant_titulo", "VALORANT"),
+                mensaje_final
+            )
 
             self.leer_datos_actuales()
             self.actualizar_estado_interfaz()
 
         except Exception as e:
             from tkinter import messagebox
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(
+                self.tr("msg_error_titulo", "Error"),
+                str(e)
+            )
 
     def mostrar_ayuda(self, tipo):
         """Muestra la ayuda detallada según el botón presionado."""
@@ -1399,7 +1503,10 @@ class ValorantConfigApp(ctk.CTk):
             msg = t["help_res"]
         
         from tkinter import messagebox
-        messagebox.showinfo(titulo, msg)
+        messagebox.showinfo(
+            titulo,
+            msg
+        )
 
     def crear_backup_manual(self):
         if self.ruta_ini:
@@ -1410,7 +1517,10 @@ class ValorantConfigApp(ctk.CTk):
             
             import shutil
             shutil.copy2(self.ruta_ini, ruta_destino)
-            messagebox.showinfo("Backup", self.idiomas[self.lang]["bk_exito"])
+            messagebox.showinfo(
+                self.tr("msg_backup_titulo", "Backup"),
+                self.tr("bk_exito", "Backup created successfully.")
+            )
 
     def restaurar_backup(self):
         if not self.ruta_ini: return
@@ -1423,10 +1533,16 @@ class ValorantConfigApp(ctk.CTk):
             # Quitamos el 'Solo lectura' de Riot para poder escribir el backup
             os.chmod(self.ruta_ini, stat.S_IWRITE)
             shutil.copy2(path_bk, self.ruta_ini)
-            messagebox.showinfo("Backup", self.idiomas[self.lang]["bk_restaurado"])
+            messagebox.showinfo(
+                self.tr("msg_backup_titulo", "Backup"),
+                self.tr("bk_restaurado", "Returned to previous version.")
+            )
             self.leer_datos_actuales()
         else:
-            messagebox.showwarning("Backup", self.idiomas[self.lang]["bk_no_existe"])
+            messagebox.showwarning(
+                self.tr("msg_backup_titulo", "Backup"),
+                self.tr("bk_no_existe", "No previous backup found.")
+            )
 
     def actualizar_label_slider(self, v):
         valor = int(float(v))
@@ -1486,10 +1602,16 @@ class ValorantConfigApp(ctk.CTk):
             try:
                 os.startfile(self.ruta_ini)
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo abrir el archivo: {e}")
+                messagebox.showerror(
+                    self.tr("msg_error_titulo", "Error"),
+                    self.tr("error_abrir_archivo", "Could not open file: {}").format(e)
+                )
         else:
             from tkinter import messagebox
-            messagebox.showwarning("Aviso", "No se encontró el archivo de configuración.")
+            messagebox.showwarning(
+                self.tr("msg_aviso_titulo", "Warning"),
+                self.tr("archivo_no_encontrado", "Configuration file not found.")
+            )
 
     def cambiar_res_windows(self, ancho, alto):
         """Cambia la resolución del escritorio de Windows con notificaciones visuales."""
@@ -1530,12 +1652,18 @@ class ValorantConfigApp(ctk.CTk):
                 if resultado != 0:
                     # Si falla, avisamos al usuario con una ventana
                     error_msg = f"Windows rejected {ancho}x{alto}. Code: {resultado}" if self.lang == "EN" else f"Windows rechazó {ancho}x{alto}. Código: {resultado}"
-                    messagebox.showwarning("Windows Display", error_msg)
+                    messagebox.showwarning(
+                        self.tr("msg_windows_display_titulo", "Windows Display"),
+                        error_msg
+                    )
                 # Nota: El mensaje de éxito ya se muestra en la función aplicar() consolidado.
                     
         except Exception as e:
             from tkinter import messagebox
-            messagebox.showerror("System Error", f"Error: {str(e)}")
+            messagebox.showerror(
+                self.tr("msg_error_titulo", "Error"),
+                self.tr("system_error", "Error: {}").format(str(e))
+            )
 
 if __name__ == "__main__":
     app = ValorantConfigApp()
