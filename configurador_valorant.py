@@ -754,14 +754,65 @@ class ValorantConfigApp(ctk.CTk):
             self.label_detect_x.configure(text=""), self.label_detect_y.configure(text="")
             return
         try:
-            with open(self.ruta_ini, 'r') as f: contenido = f.read()
-            x = re.search(r'ResolutionSizeX=(\d+)', contenido)
-            y = re.search(r'ResolutionSizeY=(\d+)', contenido)
-            if x and y:
-                self.entry_x.delete(0, 'end'), self.entry_x.insert(0, x.group(1))
-                self.entry_y.delete(0, 'end'), self.entry_y.insert(0, y.group(1))
-                self.label_detect_x.configure(text=self.idiomas[self.lang]["detectado"])
-                self.label_detect_y.configure(text=self.idiomas[self.lang]["detectado"])
+            import stat  # IMPORTANTE: Importar aquí para evitar el error de variable local
+            
+            with open(self.ruta_ini, 'r', encoding='utf-8') as f: 
+                contenido = f.read()
+
+            # 1. Extraer valores con regex flexible
+            x_conf = re.search(r'LastUserConfirmedResolutionSizeX\s*=\s*(\d+)', contenido)
+            y_conf = re.search(r'LastUserConfirmedResolutionSizeY\s*=\s*(\d+)', contenido)
+            fs_mode = re.search(r'FullscreenMode\s*=\s*(\d+)', contenido)
+            
+            val_x = x_conf.group(1) if x_conf else "1920"
+            val_y = y_conf.group(1) if y_conf else "1080"
+            val_fs = fs_mode.group(1) if fs_mode else "2"
+
+            import stat
+            mode = os.stat(self.ruta_ini).st_mode
+            os.chmod(self.ruta_ini, mode | stat.S_IWRITE)
+
+            lineas = contenido.splitlines()
+            nuevas_lineas = []
+            cambio_realizado = False
+
+            for l in lineas:
+                l_strip = l.strip()
+                # Buscamos las líneas clave y las reemplazamos directamente
+                if l_strip.startswith("FullscreenMode="):
+                    nuevas_lineas.append("FullscreenMode=2")
+                    cambio_realizado = True
+                elif l_strip.startswith("LastConfirmedFullscreenMode="):
+                    nuevas_lineas.append("LastConfirmedFullscreenMode=2")
+                    cambio_realizado = True
+                elif l_strip.startswith("ResolutionSizeX="):
+                    nuevas_lineas.append(f"ResolutionSizeX={val_x}")
+                elif l_strip.startswith("ResolutionSizeY="):
+                    nuevas_lineas.append(f"ResolutionSizeY={val_y}")
+                else:
+                    nuevas_lineas.append(l)
+
+            # Escribimos el archivo solo si detectamos que algo debía cambiar
+            contenido_final = "\n".join(nuevas_lineas)
+            with open(self.ruta_ini, 'w', encoding='utf-8') as f:
+                f.write(contenido_final)
+            
+            # Restauramos el bloqueo de Solo Lectura si el usuario lo tiene marcado en la App
+            if self.switch_read_only.get():
+                os.chmod(self.ruta_ini, mode & ~stat.S_IWRITE)
+            
+            # Actualizamos la variable contenido para que el resto de la función lea lo nuevo
+            contenido = contenido_final
+
+            # 2. Cargar datos en la Interfaz (UI)
+            self.entry_x.delete(0, 'end')
+            self.entry_x.insert(0, val_x)
+            self.entry_y.delete(0, 'end')
+            self.entry_y.insert(0, val_y)
+            self.label_detect_x.configure(text=self.idiomas[self.lang]["detectado"])
+            self.label_detect_y.configure(text=self.idiomas[self.lang]["detectado"])
+
+            # --- 3. DETECTAR CALIDAD 3D ---
             q = re.search(r'sg\.ResolutionQuality=(\d+)', contenido)
             if q:
                 num = int(float(q.group(1)))
@@ -769,28 +820,23 @@ class ValorantConfigApp(ctk.CTk):
                 self.label_slider_num.configure(text=f"{num}%")
                 self.actualizar_label_slider(num) 
 
-                # --- NUEVA LÓGICA DE DETECCIÓN DE SWITCHES ---
-                       # 1. Detectar si el Impulso FPS está activo (Solo actualiza si el archivo es distinto a la UI)
+            # --- 4. DETECCIÓN DE SWITCHES ---
             ajustes_fps = ["sg.ViewDistanceQuality", "sg.AntiAliasingQuality", "sg.ShadowQuality", "sg.PostProcessQuality", "sg.TextureQuality", "sg.EffectsQuality", "sg.FoliageQuality", "sg.ShadingQuality", "sg.GlobalIlluminationQuality", "sg.ReflectionQuality"]
             archivo_fps_activo = all(re.search(f'{k}=0', contenido) for k in ajustes_fps)
-            
             if archivo_fps_activo != self.switch_fps.get():
                 if archivo_fps_activo: self.switch_fps.select()
                 else: self.switch_fps.deselect()
 
-           # 2. Detectar si el archivo está bloqueado físicamente
-            if os.path.exists(self.ruta_ini):
-                # SI hay un bloqueo de interfaz en progreso, NO tocamos el switch
-                if not getattr(self, 'bloqueo_en_progreso', False):
-                    archivo_bloqueado = not (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE)
-                    if archivo_bloqueado:
-                        self.switch_read_only.select()
-                    else:
-                        self.switch_read_only.deselect()
+            # 5. Estado del archivo físico para el switch de bloqueo
+            if not getattr(self, 'bloqueo_en_progreso', False):
+                archivo_bloqueado = not (os.stat(self.ruta_ini).st_mode & stat.S_IWRITE)
+                if archivo_bloqueado: self.switch_read_only.select()
+                else: self.switch_read_only.deselect()
 
-                         # Refrescamos el bloqueo de botones según lo que acabamos de leer del archivo
             self.actualizar_estado_interfaz()
-        except: pass
+
+        except Exception as e:
+            print(f"Error en lectura de datos: {e}")
 
     def obtener_ruta_datos_inicial(self):
         """Lee el archivo semilla para saber dónde está la carpeta data."""
@@ -1426,20 +1472,28 @@ class ValorantConfigApp(ctk.CTk):
 
             # 1. Parámetros de resolución
             params = {
+                # --- TUS PARÁMETROS ORIGINALES (¡Mantenlos!) ---
                 'bShouldLetterbox': 'False',
                 'bLastConfirmedShouldLetterbox': 'False',
                 'bUseVSync': 'False',
                 'bUseDynamicResolution': 'False',
+                'WindowPosX': '0',
+                'WindowPosY': '0',
+                'AudioQualityLevel': '0',
+                'LastConfirmedAudioQualityLevel': '0',               
+                # --- EL REFUERZO DE RESOLUCIÓN (Lo que arregla el 1600x900) ---
                 'ResolutionSizeX': x,
                 'ResolutionSizeY': y,
                 'LastUserConfirmedResolutionSizeX': x,
                 'LastUserConfirmedResolutionSizeY': y,
-                'WindowPosX': '0',
-                'WindowPosY': '0',
+                'DesiredScreenWidth': x,
+                'DesiredScreenHeight': y,
+                'LastUserConfirmedDesiredScreenWidth': x,
+                'LastUserConfirmedDesiredScreenHeight': y,               
+                # --- MODO DE PANTALLA ---
+                'FullscreenMode': '2',
                 'LastConfirmedFullscreenMode': '2',
                 'PreferredFullscreenMode': '0',
-                'AudioQualityLevel': '0',
-                'LastConfirmedAudioQualityLevel': '0'
             }
             
             for clave, valor in params.items():
