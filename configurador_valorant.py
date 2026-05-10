@@ -81,7 +81,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # --- CONFIGURACIÓN DE VENTANA ---
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("595x740")
+        self.geometry("595x695")
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -1178,11 +1178,11 @@ class ValorantConfigApp(ctk.CTk):
         self.btn_aplicar.bind("<Leave>", lambda e: self.btn_aplicar.configure(height=50, border_width=0))
 
         # Redes Sociales
-        self.frame_social = ctk.CTkFrame(self, fg_color="transparent")
-        self.frame_social.pack(pady=10)
-        self.crear_soc(self.img_github, "#000", "https://github.com/MauricioEsparron/configurador_valorant")
-        self.crear_soc(self.img_coffee, "#FFDD00", "https://buymeacoffee.com/maxpredator01")
-        self.crear_soc(self.img_stream, "#7FF5D2", "https://streamlabs.com/maxpredator01/tip")
+        # self.frame_social = ctk.CTkFrame(self, fg_color="transparent")
+        # self.frame_social.pack(pady=10)
+        # self.crear_soc(self.img_github, "#000", "https://github.com/MauricioEsparron/configurador_valorant")
+        # self.crear_soc(self.img_coffee, "#FFDD00", "https://buymeacoffee.com/maxpredator01")
+        # self.crear_soc(self.img_stream, "#7FF5D2", "https://streamlabs.com/maxpredator01/tip")
 
         # --- SECCIÓN DE CRÉDITOS ---
         self.label_creditos = ctk.CTkLabel(self, text="", font=("Segoe UI", 10, "bold"), text_color="#9ca3af")
