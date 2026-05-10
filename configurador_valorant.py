@@ -81,7 +81,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # --- CONFIGURACIÓN DE VENTANA ---
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("570x740")
+        self.geometry("595x740")
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -355,77 +355,114 @@ class ValorantConfigApp(ctk.CTk):
 
     def abrir_ajustes_globales(self):
         """Ventana de ajustes con pestañas para una mejor organización."""
-        ventana_adj = ctk.CTkToplevel(self)
-        ventana_adj.title("Ajustes de Aplicación")
-        ventana_adj.geometry("550x450")
-        ventana_adj.minsize(550, 450)
-        ventana_adj.maxsize(550, 450)
-        ventana_adj.resizable(False, False)
+        self.ventana_adj = ctk.CTkToplevel(self)
+        self.ventana_adj.geometry("550x380")
+        self.ventana_adj.resizable(False, False)
+        self.ventana_adj.grab_set()
+        self.ventana_adj.attributes("-topmost", True)
+        
+        t = self.idiomas[self.lang]
+        
+        self.tabview_adj = ctk.CTkTabview(self.ventana_adj, width=500, height=400)
+        self.tabview_adj.pack(padx=20, pady=10)
 
-        ventana_adj.grab_set()
-        ventana_adj.attributes("-topmost", True)
+        # 1. GUARDAMOS NOMBRES Y AÑADIMOS PESTAÑAS
+        name_gen = t.get("tab_general", "General")
+        name_alm = t.get("tab_storage", "Almacenamiento")
+        name_apa = t.get("tab_appearance", "Apariencia")
 
-        # Creamos el sistema de pestañas (Tabs)
-        tabview = ctk.CTkTabview(ventana_adj, width=500, height=400)
-        tabview.pack(padx=20, pady=10)
+        self.tabview_adj.add(name_gen)
+        self.tabview_adj.add(name_alm)
+        self.tabview_adj.add(name_apa)
 
-        tabview.add("General")         # Para Idioma y personalización básica
-        tabview.add("Almacenamiento")  # Para la ruta de la carpeta Data
-        tabview.add("Apariencia")      # Para futuros temas (Dark/Light mode)
+        # 2. CONTENIDO PESTAÑA: GENERAL
+        tab_gen = self.tabview_adj.tab(name_gen)
+        self.lbl_lang_ajustes = ctk.CTkLabel(tab_gen, text="", font=("Arial", 12, "bold"))
+        self.lbl_lang_ajustes.pack(pady=(10, 5))
 
-        # --- PESTAÑA: GENERAL (Localización Pro) ---
-        lbl_lang = ctk.CTkLabel(tabview.tab("General"), text="Seleccionar Idioma:", font=("Arial", 12, "bold"))
-        lbl_lang.pack(pady=(10, 5))
-
-        # 1. Buscador (Lupita)
-        self.entry_busqueda_lang = ctk.CTkEntry(tabview.tab("General"), placeholder_text="🔍 Buscar idioma (ej: English, French...)")
+        self.entry_busqueda_lang = ctk.CTkEntry(tab_gen)
         self.entry_busqueda_lang.pack(pady=5, fill="x", padx=30)
-        self.entry_busqueda_lang.bind("<KeyRelease>", self.filtrar_idiomas) # Filtrado en tiempo real
+        self.entry_busqueda_lang.bind("<KeyRelease>", lambda e: self.filtrar_idiomas())
 
-        # 2. Frame con Scroll para los idiomas
-        # Usamos un color de fondo un poco más oscuro para que resalte
-        self.scroll_idiomas = ctk.CTkScrollableFrame(tabview.tab("General"), height=220, fg_color="#161b22")
+        self.scroll_idiomas = ctk.CTkScrollableFrame(tab_gen, height=220, fg_color="#161b22")
         self.scroll_idiomas.pack(pady=10, fill="both", expand=True, padx=30)
 
-        # 3. Lista de idiomas (Códigos ISO: Nombre a mostrar)
-        # Aquí puedes agregar todos los que quieras
-        self.diccionario_global_idiomas = {
-            "ES": "Español", "EN": "English", "FR": "Français", 
-            "DE": "Deutsch", "IT": "Italiano", "PT": "Português", 
-            "RU": "Pусский", "JP": "日本語", "KR": "한국어", "ZH": "中文"
-        }
+        # 3. CONTENIDO PESTAÑA: ALMACENAMIENTO
+        tab_alm = self.tabview_adj.tab(name_alm)
+        self.lbl_titulo_ruta = ctk.CTkLabel(tab_alm, text="", font=("Arial", 12, "bold"))
+        self.lbl_titulo_ruta.pack(pady=20)
+        
+        self.lbl_ruta_actual = ctk.CTkLabel(tab_alm, text=f"{self.folder_data}", wraplength=400)
+        self.lbl_ruta_actual.pack(pady=10)
 
-        # 4. Generar la lista inicial de botones
-        self.botones_idiomas = {}
-        self.generar_lista_idiomas()
-
-        # --- PESTAÑA: ALMACENAMIENTO ---
-        ctk.CTkLabel(tabview.tab("Almacenamiento"), text="Ubicación de la Carpeta de Datos", font=("Arial", 12, "bold")).pack(pady=20)
-        lbl_ruta = ctk.CTkLabel(tabview.tab("Almacenamiento"), text=f"Ruta actual:\n{self.folder_data}", wraplength=400)
-        lbl_ruta.pack(pady=10)
-
-        def cambiar_ruta():
+        def cambiar_ruta_interna():
             from tkinter import filedialog
-            nueva_ruta = filedialog.askdirectory(title="Selecciona la nueva ubicación para /data")
+            nueva_ruta = filedialog.askdirectory()
             if nueva_ruta:
-                # Guardamos en la semilla y en el Super JSON
                 with open(self.archivo_semilla, "w") as f:
                     json.dump({"data_path": nueva_ruta}, f)
                 self.guardar_en_super_json("config_global", None, "data_path", nueva_ruta)
-                
-                messagebox.showinfo(
-                    self.tr("msg_exito_titulo", "Success"),
-                    self.tr("ruta_actualizada", "Path updated. Restart the application.")
-                )
+                t_msg = self.idiomas[self.lang]
+                messagebox.showinfo(t_msg.get("msg_exito_titulo", "Success"), t_msg.get("ruta_actualizada", "Restart required"))
+                self.ventana_adj.destroy()
 
-                self.destroy()
+        self.btn_cambiar_ruta = ctk.CTkButton(tab_alm, command=cambiar_ruta_interna)
+        self.btn_cambiar_ruta.pack(pady=20)
 
-        ctk.CTkButton(tabview.tab("Almacenamiento"), text="Cambiar Ubicación", command=cambiar_ruta).pack(pady=20)
+        # 4. CONFIGURACIÓN DE IDIOMAS Y BOTONES
+        self.diccionario_global_idiomas = {
+            "ES": "Español", "EN": "English", "FR": "Français", "DE": "Deutsch",
+            "IT": "Italiano", "PT": "Português", "RU": "Pусский", "JP": "日本語",
+            "KO": "한국어", "ZH": "中文"
+        }
+        
+        self.botones_idiomas = {}
+        self.generar_lista_idiomas()
+
+        # 5. TRADUCCIÓN FINAL (Ahora sí, todos los objetos existen)
+        self.retranslate_ajustes()
+
+    def retranslate_ajustes(self):
+        """Actualiza los textos de la ventana de ajustes."""
+        if hasattr(self, 'ventana_adj') and self.ventana_adj.winfo_exists():
+            t = self.idiomas[self.lang]
+            
+            self.ventana_adj.title(t.get("ajustes_titulo", "Settings"))
+
+            # Método compatible con las últimas versiones de CustomTkinter
+            try:
+                # Intentamos acceder a los botones del SegmentedButton
+                # En versiones nuevas, la lista de botones se suele manejar así:
+                for btn in self.tabview_adj._segmented_button._buttons_dictionary.values():
+                    if btn.cget("text") in ["General", t.get("tab_general")]:
+                        btn.configure(text=t.get("tab_general", "General"))
+                    elif btn.cget("text") in ["Almacenamiento", t.get("tab_storage")]:
+                        btn.configure(text=t.get("tab_storage", "Data"))
+                    elif btn.cget("text") in ["Apariencia", t.get("tab_appearance")]:
+                        btn.configure(text=t.get("tab_appearance", "Appearance"))
+            except:
+                # Si falla el acceso interno, al menos traducimos el resto
+                pass
+
+            # Traducir el resto de elementos
+            self.lbl_lang_ajustes.configure(text=t.get("seleccionar_idioma", "Select Language:"))
+            self.entry_busqueda_lang.configure(placeholder_text=t.get("buscar_idioma", "Search..."))
+            self.lbl_titulo_ruta.configure(text=t.get("titulo_ruta", "Data Location"))
+            self.btn_cambiar_ruta.configure(text=t.get("btn_cambiar_ruta", "Change Path"))
 
     def filtrar_idiomas(self, event=None):
         """Filtra idiomas mientras el usuario escribe."""
-        texto_busqueda = self.entry_busqueda_lang.get().strip().lower()
-        self.generar_lista_idiomas(texto_busqueda)
+        # VALIDACIÓN DE SEGURIDAD: 
+        # Si la ventana no existe o ya se cerró, salimos para evitar el error
+        if not hasattr(self, 'ventana_adj') or not self.ventana_adj.winfo_exists():
+            return
+            
+        try:
+            texto_busqueda = self.entry_busqueda_lang.get().strip().lower()
+            self.generar_lista_idiomas(texto_busqueda)
+        except Exception as e:
+            # Esto evita que el programa se cierre si el componente desaparece justo al escribir
+            print(f"Error en filtrado: {e}")
 
     def seleccionar_nuevo_idioma(self, codigo):
         """Lógica al hacer clic en un idioma de la lista con scroll."""
@@ -438,6 +475,11 @@ class ValorantConfigApp(ctk.CTk):
         
         # 3. Actualizar toda la interfaz al instante
         self.cambiar_idioma()
+        
+        # Esto garantiza que hasta los nombres de las pestañas se traduzcan
+        if hasattr(self, 'ventana_adj') and self.ventana_adj.winfo_exists():
+            self.ventana_adj.destroy()  # Cierra la versión con idioma viejo
+            self.abrir_ajustes_globales()  # Abre la versión con idioma nuevo
         
         # 4. Refrescar la lista de botones para resaltar el nuevo seleccionado
         self.filtrar_idiomas(None)
@@ -1093,7 +1135,7 @@ class ValorantConfigApp(ctk.CTk):
             "sugeridas": "Suggested resolutions:",
             "btn_aplicar": "APPLY CONFIGURATION",
             "footer": "Close the game before applying changes",
-            "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
+            "creditos": "Developed by Mauricio Ramirez | 10/05/2026 | v2.0.0",
             "combo_init": "Select resolution...",
             "boost": "Ultra FPS Boost",
             "bloquear": "Lock File (Read Only)",
