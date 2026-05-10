@@ -47,6 +47,8 @@
   "bk_no_existe": "Aucune sauvegarde précédente trouvée.",
 
   "ajustes_titulo": "Paramètres de l'application",
+  "personalizar_cuenta_titulo": "Personnaliser le compte",
+  "escribe_alias": "Saisissez le nouvel alias (3-30 caractères) :",
   "seleccionar_idioma": "Choisir la langue :",
   "buscar_idioma": "Rechercher une langue...",
   "tab_general": "Général",
@@ -66,7 +68,7 @@
     "1280x960 (Équilibrée / Populaire)",
     "1152x864 (Qualité Moyenne)",
     "1024x768 (Basse / +FPS)",
-    "800x600 (Extrême / PC modeste)",
+    "800x600 (Extrême / PC modeste)",
     "640x480 (Minimum)"
   ]
 }

@@ -47,6 +47,8 @@
   "bk_no_existe": "未找到之前的备份。",
 
   "ajustes_titulo": "应用程序设置",
+  "personalizar_cuenta_titulo": "个性化账户",
+  "escribe_alias": "输入新别名 (3-30 个字符):",
   "seleccionar_idioma": "选择语言：",
   "buscar_idioma": "搜索语言...",
   "tab_general": "常规",

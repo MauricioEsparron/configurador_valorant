@@ -42,11 +42,13 @@
   "help_lock": "Define o arquivo como 'Somente Leitura' para evitar alterações automáticas.",
   "help_res": "Altera a resolução da área de trabalho para corresponder à do jogo.",
 
-  "bk_exito": "Backup criado com sucesso.",
+  "bk_exito": "Backup creado com sucesso.",
   "bk_restaurado": "Retornado à versão anterior.",
   "bk_no_existe": "Nenhum backup anterior encontrado.",
 
   "ajustes_titulo": "Ajustes do Aplicativo",
+  "personalizar_cuenta_titulo": "Personalizar Conta",
+  "escribe_alias": "Digite o novo apelido (3-30 caracteres):",
   "seleccionar_idioma": "Selecionar Idioma:",
   "buscar_idioma": "Buscar idioma...",
   "tab_general": "Geral",

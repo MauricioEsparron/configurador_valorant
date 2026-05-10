@@ -57,7 +57,7 @@ class ValorantConfigApp(ctk.CTk):
         # Resolución 3D
         self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
 
-        self.lang = self.datos_pro.get("config_global", {}).get("language", "es")
+        self.lang = self.datos_pro.get("config_global", {}).get("language", "en")
 
         # Diccionario cache
         self.idiomas = {}
@@ -153,7 +153,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # Estructura base si el archivo no existe
         nuevo_super_json = {
-            "config_global": {"res_3d_default": 100, "language": "ES"},
+            "config_global": {"res_3d_default": 100, "language": "EN"},
             "accounts": {}
         }
 
@@ -290,15 +290,14 @@ class ValorantConfigApp(ctk.CTk):
 
         # 1. Creamos una ventana de nivel superior (Popup)
         self.ventana_input = ctk.CTkToplevel(self)
-        self.ventana_input.title("Personalizar Cuenta")
+        self.ventana_input.title(self.tr("personalizar_cuenta_titulo", "Personalize Account"))
         self.ventana_input.geometry("550x230")
         self.ventana_input.resizable(False, False)
         self.ventana_input.grab_set() # Bloquea la ventana principal hasta cerrar esta
 
         # 2. Etiquetas de información
         ctk.CTkLabel(self.ventana_input, text=f"ID: {id_real}", font=("Arial", 10), text_color="gray").pack(pady=(15, 0))
-        ctk.CTkLabel(self.ventana_input, text="Escribe el nuevo alias (3-30 caracteres):", font=("Arial", 12, "bold")).pack(pady=10)
-
+        ctk.CTkLabel(self.ventana_input, text=self.tr("escribe_alias", "Enter the new alias (3-30 characters):"), font=("Arial", 12, "bold")).pack(pady=10)
         # 3. EL CAMPO DE TEXTO CON LA DATA CARGADA
         self.entry_alias = ctk.CTkEntry(self.ventana_input, width=300)
         self.entry_alias.insert(0, nombre_actual) # <--- AQUÍ CARGAMOS EL NOMBRE ANTERIOR
@@ -351,7 +350,7 @@ class ValorantConfigApp(ctk.CTk):
                 self.tr("nombre_actualizado", "Name updated.")
             )
 
-        ctk.CTkButton(self.ventana_input, text="Guardar", command=confirmar).pack(pady=20)
+        ctk.CTkButton(self.ventana_input, text=self.tr("btn_guardar", "Save"), command=confirmar).pack(pady=20)
 
     def abrir_ajustes_globales(self):
         """Ventana de ajustes con pestañas para una mejor organización."""
@@ -819,7 +818,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # Si no existe, creamos la estructura base
         nuevo_super_json = {
-            "config_global": {"res_3d_default": 100, "language": "ES"},
+            "config_global": {"res_3d_default": 100, "language": "EN"},
             "accounts": {}
         }
 

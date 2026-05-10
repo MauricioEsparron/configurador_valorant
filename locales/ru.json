@@ -47,6 +47,8 @@
   "bk_no_existe": "Предыдущая копия не найдена.",
 
   "ajustes_titulo": "Настройки приложения",
+  "personalizar_cuenta_titulo": "Настроить аккаунт",
+  "escribe_alias": "Введите новый псевдоним (3-30 символов):",
   "seleccionar_idioma": "Выберите язык:",
   "buscar_idioma": "Поиск языка...",
   "tab_general": "Общий",

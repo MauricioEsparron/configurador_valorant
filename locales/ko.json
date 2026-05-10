@@ -47,6 +47,8 @@
   "bk_no_existe": "이전 백업을 찾을 수 없습니다.",
 
   "ajustes_titulo": "앱 설정",
+  "personalizar_cuenta_titulo": "계정 별칭 설정",
+  "escribe_alias": "새로운 별칭을 입력하세요 (3-30자):",
   "seleccionar_idioma": "언어 선택:",
   "buscar_idioma": "언어 검색...",
   "tab_general": "일반",

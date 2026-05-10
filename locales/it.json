@@ -47,6 +47,8 @@
   "bk_no_existe": "Nessun backup precedente trovato.",
 
   "ajustes_titulo": "Impostazioni Applicazione",
+  "personalizar_cuenta_titulo": "Personalizza account",
+  "escribe_alias": "Inserisci il nuovo alias (3-30 caratteri):",
   "seleccionar_idioma": "Seleziona Lingua:",
   "buscar_idioma": "Cerca lingua...",
   "tab_general": "Generale",

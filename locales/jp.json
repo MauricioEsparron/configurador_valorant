@@ -47,6 +47,8 @@
   "bk_no_existe": "以前のバックアップが見つかりません。",
 
   "ajustes_titulo": "アプリの設定",
+  "personalizar_cuenta_titulo": "アカウントのカスタマイズ",
+  "escribe_alias": "新しいエイリアスを入力してください (3-30文字):",
   "seleccionar_idioma": "言語を選択:",
   "buscar_idioma": "言語を検索...",
   "tab_general": "全般",
