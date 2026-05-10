@@ -54,16 +54,8 @@ class ValorantConfigApp(ctk.CTk):
         # 5. MIGRACIÓN Y CARGA
         self.datos_pro = self.cargar_y_migrar_datos()
         
-        # 1. Asegurar carpeta de traducciones
-        self.folder_locales = os.path.join(self.folder_data, "locales")
-        os.makedirs(self.folder_locales, exist_ok=True)
-
-        # 2. Resolución 3D
+        # Resolución 3D
         self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
-
-        # 3. Suite de Localización Global Pro
-        self.locales_path = os.path.join("data", "locales")
-        os.makedirs(self.locales_path, exist_ok=True)
 
         self.lang = self.datos_pro.get("config_global", {}).get("language", "es")
 
@@ -1196,15 +1188,13 @@ class ValorantConfigApp(ctk.CTk):
         btn.pack(side="left", padx=10)
 
     def cambiar_idioma(self):
-            # Intentamos leer del switch de la tuerquita
-        # --- 1. BLOQUE ACTUALIZADO: YA NO USA EL SWITCH ---
-        # Si el idioma no está cargado en memoria, lo buscamos en el JSON
+        # --- 1. CARGA DEL DICCIONARIO ---
         if self.lang not in self.idiomas:
             self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)
-            
-        t = self.idiomas[self.lang]
         
-        # --- Actualización de textos de la interfaz ---
+        t = self.idiomas[self.lang]
+
+        # --- 2. ACTUALIZACIÓN DE TEXTOS ESTÁTICOS ---
         self.label_titulo.configure(text=t["titulo"])
         self.label_res_p.configure(text=t["res_perso"])
         self.label_x_text.configure(text=t["ancho"])
@@ -1218,13 +1208,19 @@ class ValorantConfigApp(ctk.CTk):
         self.switch_read_only.configure(text=t["bloquear"])
         self.label_footer.configure(text=t["footer"])
         self.label_creditos.configure(text=t["creditos"])
-        self.combo_res.configure(values=t["opciones"])
         self.check_res_windows.configure(text=t["res_win"])
+
+        # --- 3. ACTUALIZACIÓN DEL COMBOBOX DE RESOLUCIONES ---
+        self.combo_res.configure(values=t["opciones"])
         
-        if self.combo_res.get() in ["", "CTkComboBox", "Seleccionar Resolución", "Select Resolution"]:
+        texto_actual_combo = self.combo_res.get()
+        
+        # TRUCO: Si el texto actual NO contiene una 'x' (que indica resolución numérica)
+        # significa que es un placeholder como "Seleccionar..." y debemos traducirlo.
+        if "x" not in texto_actual_combo.lower():
             self.combo_res.set(t["combo_init"])
 
-        # --- SECCIÓN DE CUENTAS (Lógica de Alias unificada) ---
+        # --- 4. SECCIÓN DE CUENTAS (Lógica de Alias) ---
         if self.ruta_ini:
             id_carpeta = os.path.basename(os.path.dirname(os.path.dirname(self.ruta_ini)))
             alias_dict = self.cargar_alias()
@@ -1232,12 +1228,7 @@ class ValorantConfigApp(ctk.CTk):
             if id_carpeta in alias_dict:
                 datos_cuenta = alias_dict[id_carpeta]
                 alias_texto = datos_cuenta.get("alias", "") if isinstance(datos_cuenta, dict) else ""
-                
-                if alias_texto:
-                    # Mantenemos el formato Pro de la barra vertical
-                    nombre_final = f"{alias_texto}  |  id: {id_carpeta}"
-                else:
-                    nombre_final = id_carpeta
+                nombre_final = f"{alias_texto} | id: {id_carpeta}" if alias_texto else id_carpeta
             else:
                 nombre_final = id_carpeta
 
@@ -1254,6 +1245,7 @@ class ValorantConfigApp(ctk.CTk):
                 font=("Segoe UI", 12, "bold")
             )
             self.combo_cuentas.set("")
+
 
     def generar_lista_idiomas(self, filtro=""):
         """Genera o filtra la lista global de idiomas en la ventana de ajustes."""
