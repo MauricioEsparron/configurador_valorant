@@ -46,20 +46,45 @@ class ValorantConfigApp(ctk.CTk):
         # 4. Asegurar que existan las carpetas
         os.makedirs(self.folder_backups, exist_ok=True)
 
-              # 5. MIGRACIÓN Y CARGA
+        # 5. MIGRACIÓN Y CARGA
         self.datos_pro = self.cargar_y_migrar_datos()
         
-        # --- CARGAMOS LAS PREFERENCIAS GLOBALES DEL JSON ---
-        # 1. Resolución 3D
+        # 1. Asegurar carpeta de traducciones
+        self.folder_locales = os.path.join(self.folder_data, "locales")
+        os.makedirs(self.folder_locales, exist_ok=True)
+
+        # 2. Resolución 3D
         self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
-        
-        # 2. Idioma (AÑADE ESTO AQUÍ)
-        # Si no existe en el JSON, ponemos "ES" por defecto
-        self.lang = self.datos_pro.get("config_global", {}).get("language", "ES")
+
+        # 3. Suite de Localización Global Pro
+        self.locales_path = os.path.join("data", "locales")
+        os.makedirs(self.locales_path, exist_ok=True)
+
+        self.lang = self.datos_pro.get("config_global", {}).get("language", "es")
+
+        # Diccionario cache
+        self.idiomas = {}
+
+        # Catálogo global de idiomas
+        self.idiomas_disponibles = {
+            "es": "Español",
+            "en": "English",
+            "fr": "Français",
+            "de": "Deutsch",
+            "it": "Italiano",
+            "pt": "Português",
+            "ja": "日本語",
+            "ko": "한국어",
+            "zh-CN": "中文 (简体)",
+            "ru": "Русский"
+        }
+
+        # Cargar idioma actual
+        self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)
 
         # --- CONFIGURACIÓN DE VENTANA ---
         self.title("VALORANT Stretched Res Configurator")
-        self.geometry("570x730")
+        self.geometry("570x740")
         self.resizable(False, False)
         
         # Icono de la ventana
@@ -77,74 +102,13 @@ class ValorantConfigApp(ctk.CTk):
             self.img_github = self.img_coffee = self.img_stream = None
 
         # --- DICCIONARIOS DE IDIOMAS COMPLETOS ---
-        self.idiomas = {
-            "ES": {
-                "titulo": "VALORANT TRUE STRETCHED CONFIG",
-                "cuenta_ok": "✅ Cuenta detectada:",
-                "cuenta_no": "❌ No se detectó cuenta activa",
-                "res_perso": "Resolución Personalizada",
-                "ancho": "Ancho (X):",
-                "alto": "Alto (Y):",
-                "detectado": "← Detectado",
-                "sugeridas": "Resoluciones sugeridas:",
-                "btn_aplicar": "APLICAR CONFIGURACIÓN",
-                "footer": "Cierra el juego antes de aplicar los cambios",
-                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
-                "combo_init": "Seleccionar resolución...",
-                "boost": "Impulso FPS Ultra",
-                "bloquear": "Bloquear archivo (Anti-Reversión)",
-                "calidad_res": "Calidad de resolución 3D:",
-                "btn_crear_bk": "CREAR BACKUP",
-                "btn_restaurar_bk": "VOLVER A ANTERIOR",
-                "exito": "¡Configuración aplicada!\nResolución: {}x{}\nCalidad 3D: {}%",
-                "help_boost": "Fuerza parámetros gráficos ultra bajos que no están disponibles en los menús normales del juego, los cambios se aplicaran en: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTA: puedes definir los valores entre el 0 y el 5.",
-                "help_lock": "Pone el archivo en 'Solo Lectura' para que Valorant no cambie tus configuraciones cuando cierres el juego. \n\n⚠️ RECOMENDACIÓN: Desactiva esta opción durante actualizaciones de Valorant para evitar errores de parcheo.",
-                "bk_exito": "Backup creado con éxito.",
-                "bk_restaurado": "Se ha regresado a la versión guardada.",
-                "bk_no_existe": "No hay versiones guardadas.",
-                   "opciones": [
-                    "1920x1440 (Alta / 2K)", "1600x1200 (Alta / Estándar)", "1440x1080 (Ideal para monitores 1080p)",
-                    "1280x960 (Equilibrada / Popular)", "1152x864 (Calidad Media)", "1024x768 (Baja / +Rendimiento FPS)",
-                    "800x600 (Extrema / PC de bajos recursos)", "640x480 (Mínima)"
-                ],
-                "res_win": "Sincro. Win",
-                "help_res": "Cambia la resolución de tu escritorio para que coincida con la del juego. Esto evita el parpadeo negro al hacer Alt+Tab.",
-            },
-            "EN": {
-                "titulo": "VALORANT TRUE STRETCHED CONFIG",
-                "cuenta_ok": "✅ Account detected:",
-                "cuenta_no": "❌ No active account detected",
-                "res_perso": "Custom Resolution",
-                "ancho": "Width (X):",
-                "alto": "Height (Y):",
-                "detectado": "← Detected",
-                "sugeridas": "Suggested resolutions:",
-                "btn_aplicar": "APPLY CONFIGURATION",
-                "footer": "Close the game before applying changes",
-                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
-                "combo_init": "Select resolution...",
-                "boost": "Ultra FPS Boost",
-                "bloquear": "Lock File (Read Only)",
-                "calidad_res": "3D Resolution Quality:",
-                "btn_crear_bk": "CREATE BACKUP",
-                "btn_restaurar_bk": "RETURN TO PREVIOUS",
-                "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
-                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: You can define the values ​​between 0 and 5.",
-                "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
-                "bk_exito": "Backup created successfully.",
-                "bk_restaurado": "Returned to previous version.",
-                "bk_no_existe": "No previous backup found.",
-                "opciones": [
-                    "1920x1440 (High / 2K)", "1600x1200 (High / Standard)", "1440x1080 (Ideal for 1080p monitors)",
-                    "1280x960 (Balanced / Popular)", "1152x864 (Medium Quality)", "1024x768 (Low / +FPS Performance)",
-                    "800x600 (Extreme / Low-end PC)", "640x480 (Minimum)"
-                ],
-                "res_win": "Sync Windows",
-                "help_res": "Changes your desktop resolution to match the game. This prevents the black screen flicker when Alt-Tabbing.",
-            }
-        }
-
-        self.lang = "ES"
+        self.idiomas = {}
+        
+        # 1. Cargamos el código del idioma desde el Super JSON
+        self.lang = self.datos_pro.get("config_global", {}).get("language", "ES")
+        
+        # 2. Cargamos dinámicamente el archivo JSON correspondiente
+        self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)            
         
          # 1. Primero creamos la interfaz
         self.setup_ui() 
@@ -153,7 +117,7 @@ class ValorantConfigApp(ctk.CTk):
         # Asegúrate de que obtener_ruta_activa() siga existiendo o usa la nueva lógica
         self.ruta_ini = self.obtener_ruta_activa()
         
-         # 3. Aplicamos el idioma (ahora ya existe label_cuenta_fija y combo_cuentas)
+        # 3. Aplicamos el idioma (ahora ya existe label_cuenta_fija y combo_cuentas)
         self.cambiar_idioma() 
 
         # 4. Cargamos los datos en los inputs
@@ -385,6 +349,10 @@ class ValorantConfigApp(ctk.CTk):
         ventana_adj = ctk.CTkToplevel(self)
         ventana_adj.title("Ajustes de Aplicación")
         ventana_adj.geometry("550x450")
+        ventana_adj.minsize(550, 450)
+        ventana_adj.maxsize(550, 450)
+        ventana_adj.resizable(False, False)
+
         ventana_adj.grab_set()
         ventana_adj.attributes("-topmost", True)
 
@@ -396,20 +364,31 @@ class ValorantConfigApp(ctk.CTk):
         tabview.add("Almacenamiento")  # Para la ruta de la carpeta Data
         tabview.add("Apariencia")      # Para futuros temas (Dark/Light mode)
 
-        # --- PESTAÑA: GENERAL (Idioma) ---
-        lbl_lang = ctk.CTkLabel(tabview.tab("General"), text="Idioma de la aplicación:", font=("Arial", 12, "bold"))
-        lbl_lang.pack(pady=(20, 10))
+        # --- PESTAÑA: GENERAL (Localización Pro) ---
+        lbl_lang = ctk.CTkLabel(tabview.tab("General"), text="Seleccionar Idioma:", font=("Arial", 12, "bold"))
+        lbl_lang.pack(pady=(10, 5))
 
-        # Reutilizamos tu Switch de idioma pero ahora dentro de la tuerquita
-        self.switch_lang_adj = ctk.CTkSwitch(
-            tabview.tab("General"), 
-            text="English / Español", 
-            command=self.cambiar_idioma,
-            progress_color="#ff4655"
-        )
-        # Sincronizamos el estado del switch con el idioma actual
-        if self.lang == "EN": self.switch_lang_adj.select()
-        self.switch_lang_adj.pack(pady=10)
+        # 1. Buscador (Lupita)
+        self.entry_busqueda_lang = ctk.CTkEntry(tabview.tab("General"), placeholder_text="🔍 Buscar idioma (ej: English, French...)")
+        self.entry_busqueda_lang.pack(pady=5, fill="x", padx=30)
+        self.entry_busqueda_lang.bind("<KeyRelease>", self.filtrar_idiomas) # Filtrado en tiempo real
+
+        # 2. Frame con Scroll para los idiomas
+        # Usamos un color de fondo un poco más oscuro para que resalte
+        self.scroll_idiomas = ctk.CTkScrollableFrame(tabview.tab("General"), height=220, fg_color="#161b22")
+        self.scroll_idiomas.pack(pady=10, fill="both", expand=True, padx=30)
+
+        # 3. Lista de idiomas (Códigos ISO: Nombre a mostrar)
+        # Aquí puedes agregar todos los que quieras
+        self.diccionario_global_idiomas = {
+            "ES": "Español", "EN": "English", "FR": "Français", 
+            "DE": "Deutsch", "IT": "Italiano", "PT": "Português", 
+            "RU": "Pусский", "JP": "日本語", "KR": "한국어", "ZH": "中文"
+        }
+
+        # 4. Generar la lista inicial de botones
+        self.botones_idiomas = {}
+        self.generar_lista_idiomas()
 
         # --- PESTAÑA: ALMACENAMIENTO ---
         ctk.CTkLabel(tabview.tab("Almacenamiento"), text="Ubicación de la Carpeta de Datos", font=("Arial", 12, "bold")).pack(pady=20)
@@ -429,6 +408,27 @@ class ValorantConfigApp(ctk.CTk):
                 self.destroy()
 
         ctk.CTkButton(tabview.tab("Almacenamiento"), text="Cambiar Ubicación", command=cambiar_ruta).pack(pady=20)
+
+    def filtrar_idiomas(self, event=None):
+        """Filtra idiomas mientras el usuario escribe."""
+        texto_busqueda = self.entry_busqueda_lang.get().strip().lower()
+        self.generar_lista_idiomas(texto_busqueda)
+
+    def seleccionar_nuevo_idioma(self, codigo):
+        """Lógica al hacer clic en un idioma de la lista con scroll."""
+        self.lang = codigo
+        # 1. Guardar permanentemente en el Super JSON
+        self.guardar_en_super_json("config_global", None, "language", codigo)
+        
+        # 2. Cargar la traducción del archivo externo
+        self.idiomas[codigo] = self.cargar_idioma_dinamico(codigo)
+        
+        # 3. Actualizar toda la interfaz al instante
+        self.cambiar_idioma()
+        
+        # 4. Refrescar la lista de botones para resaltar el nuevo seleccionado
+        self.filtrar_idiomas(None)
+
 
     def actualizar_listado_cuentas(self):
         """Refresca el ComboBox con los nuevos nombres."""
@@ -1049,21 +1049,64 @@ class ValorantConfigApp(ctk.CTk):
         self.label_footer = ctk.CTkLabel(self, text="", font=("Segoe UI", 11, "italic"), text_color="#6b7280")
         self.label_footer.pack(side="bottom", pady=(10, 0))
 
+    def cargar_idioma_dinamico(self, codigo):
+        """Busca el JSON de idioma. Si no existe, devuelve un backup básico."""
+        import json
+        # Construimos la ruta: data/locales/es.json (por ejemplo)
+        ruta = os.path.join(self.folder_data, "locales", f"{codigo.lower()}.json")
+        
+        if os.path.exists(ruta):
+            try:
+                with open(ruta, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error al leer el archivo de idioma {codigo}: {e}")
+        
+                # BACKUP: Diccionario completo para evitar KeyErrors
+        return {
+            "titulo": "VALORANT TRUE STRETCHED CONFIG",
+                "cuenta_ok": "✅ Account detected:",
+                "cuenta_no": "❌ No active account detected",
+                "res_perso": "Custom Resolution",
+                "ancho": "Width (X):",
+                "alto": "Height (Y):",
+                "detectado": "← Detected",
+                "sugeridas": "Suggested resolutions:",
+                "btn_aplicar": "APPLY CONFIGURATION",
+                "footer": "Close the game before applying changes",
+                "creditos": "Developed by Mauricio Ramirez | 22/04/2026 | v1.2.0",
+                "combo_init": "Select resolution...",
+                "boost": "Ultra FPS Boost",
+                "bloquear": "Lock File (Read Only)",
+                "calidad_res": "3D Resolution Quality:",
+                "btn_crear_bk": "CREATE BACKUP",
+                "btn_restaurar_bk": "RETURN TO PREVIOUS",
+                "exito": "Applied!\nResolution: {}x{}\n3D Quality: {}%",
+                "help_boost": "Forces ultra-low graphical settings that are not available in the standard in-game menus. Changes will be applied to: \n\n sg.ViewDistanceQuality=0,\n sg.AntiAliasingQuality=0,\n sg.ShadowQuality=0,\n sg.PostProcessQuality=0,\n sg.TextureQuality=0,\n sg.EffectsQuality=0,\n sg.FoliageQuality=0,\n sg.ShadingQuality=0,\n sg.GlobalIlluminationQuality=0,\n sg.ReflectionQuality=0\n\n NOTE: You can define the values ​​between 0 and 5.",
+                "help_lock": "Sets the file to 'Read Only' so Valorant doesn't change your settings when you close the game. \n\n⚠️ RECOMMENDATION: Disable this option during Valorant updates to avoid patching errors.",
+                "bk_exito": "Backup created successfully.",
+                "bk_restaurado": "Returned to previous version.",
+                "bk_no_existe": "No previous backup found.",
+                "opciones": [
+                    "1920x1440 (High / 2K)", "1600x1200 (High / Standard)", "1440x1080 (Ideal for 1080p monitors)",
+                    "1280x960 (Balanced / Popular)", "1152x864 (Medium Quality)", "1024x768 (Low / +FPS Performance)",
+                    "800x600 (Extreme / Low-end PC)", "640x480 (Minimum)"
+                ],
+                "res_win": "Sync Windows",
+                "help_res": "Changes your desktop resolution to match the game. This prevents the black screen flicker when Alt-Tabbing.",
+            } 
+
     def crear_soc(self, img, color, url):
         btn = ctk.CTkButton(self.frame_social, text="", image=img, fg_color=color, hover_color=color, width=48, height=48, corner_radius=10, command=lambda: webbrowser.open(url))
         btn.pack(side="left", padx=10)
 
     def cambiar_idioma(self):
             # Intentamos leer del switch de la tuerquita
-        try:
-            # Si el switch existe y está disponible, actualizamos self.lang
-            self.lang = "EN" if self.switch_lang_adj.get() == 1 else "ES"
-            # Guardamos la preferencia en el Super JSON
-            self.guardar_en_super_json("config_global", None, "language", self.lang)
-        except (AttributeError, NameError):
-            # Si el switch no existe (porque la tuerquita está cerrada), 
-            # mantenemos el idioma que ya tiene self.lang (el del Super JSON)
-            pass
+        # --- 1. BLOQUE ACTUALIZADO: YA NO USA EL SWITCH ---
+        # Si el idioma no está cargado en memoria, lo buscamos en el JSON
+        if self.lang not in self.idiomas:
+            self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)
+            
         t = self.idiomas[self.lang]
         
         # --- Actualización de textos de la interfaz ---
@@ -1116,6 +1159,52 @@ class ValorantConfigApp(ctk.CTk):
                 font=("Segoe UI", 12, "bold")
             )
             self.combo_cuentas.set("")
+
+    def generar_lista_idiomas(self, filtro=""):
+        """Genera o filtra la lista global de idiomas en la ventana de ajustes."""
+
+        if not hasattr(self, "scroll_idiomas"):
+            return
+
+        # Limpiar lista anterior
+        for widget in self.scroll_idiomas.winfo_children():
+            widget.destroy()
+
+        filtro = filtro.strip().lower()
+
+        self.botones_idiomas = {}
+
+        for codigo, nombre in self.diccionario_global_idiomas.items():
+            if filtro in nombre.lower() or filtro in codigo.lower():
+
+                btn = ctk.CTkButton(
+                    self.scroll_idiomas,
+                    text=nombre,
+                    fg_color="#ff4655" if self.lang == codigo else "transparent",
+                    anchor="w",
+                    command=lambda c=codigo: self.seleccionar_nuevo_idioma(c)
+                )
+
+                btn.pack(fill="x", pady=2, padx=5)
+
+                self.botones_idiomas[codigo] = btn
+
+    def seleccionar_idioma_global(self, codigo):
+        self.lang = codigo
+
+        # Cargar idioma dinámicamente
+        self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)
+
+        # Guardar persistencia
+        if "config_global" not in self.datos_pro:
+            self.datos_pro["config_global"] = {}
+
+        self.datos_pro["config_global"]["language"] = codigo
+
+        self.guardar_datos_pro()
+
+        # Aplicar inmediatamente
+        self.cambiar_idioma()
 
     def actualizar_o_insertar(self, contenido, clave, valor, ancla=None):
         if re.search(rf'^{clave}=.*', contenido, re.MULTILINE):
