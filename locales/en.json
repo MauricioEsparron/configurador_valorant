@@ -79,6 +79,16 @@
   "Shading": "Shading",
   "GlobalIllumination": "Global Illumination",
   "Reflection": "Reflections",
+  
+  "win_res_title": "Display Settings",
+  "win_res_msg": "Keep these display settings? Reverting in {} seconds.",
+  "btn_confirmar": "Keep changes",
+  "btn_revertir_ahora": "Revert",
+  
+  "win_res_title": "Display Settings",
+  "win_res_full_info": "✅ VALORANT settings applied successfully!\n\nWindows resolution has been synced. Does the screen look okay? It will revert automatically in {} seconds if not confirmed.",
+  "btn_confirmar": "Yes, looks good",
+  "btn_revertir_ahora": "Revert Windows",
 
   "opciones": [
     "1920x1440 (High / 2K)",

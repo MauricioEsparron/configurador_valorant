@@ -1289,6 +1289,11 @@ class ValorantConfigApp(ctk.CTk):
             # =========================
             # RESOLUTION OPTIONS
             # =========================
+            "win_res_title": "Display Settings",
+            "win_res_msg": "Keep these display settings? Reverting in {} seconds.",
+            "btn_confirmar": "Keep changes",
+            "btn_revertir_ahora": "Revert",
+        
             "opciones": [
                 "1920x1440 (High / 2K)",
                 "1600x1200 (High / Standard)",
@@ -1543,12 +1548,22 @@ class ValorantConfigApp(ctk.CTk):
             if self.switch_read_only.get():
                 mode = os.stat(self.ruta_ini).st_mode
                 os.chmod(self.ruta_ini, mode & ~stat.S_IWRITE)
-            try: 
-                # solo cambia la resolución si el Checkbox está marcado
+
+            x = self.entry_x.get()
+            y = self.entry_y.get()
+            cal = self.slider_calidad.get()
+
+            try:
                 if self.check_res_windows.get() == 1:
-                    res_x = int(x)
-                    res_y = int(y)
-                    self.cambiar_res_windows(res_x, res_y)
+                    # Si esto tiene éxito, mostrar_popup_seguridad_win se encarga de todo
+                    if self.cambiar_res_windows(int(x), int(y)):
+                        self.mostrar_popup_seguridad_win()
+                else:
+                    # SOLO si no se marcó Windows, mostramos la ventana clásica blanca
+                    messagebox.showinfo(
+                        self.tr("msg_exito_titulo"), 
+                        self.tr("exito").format(x, y, int(cal))
+                    )
             except Exception:
                 pass
 
@@ -1728,6 +1743,63 @@ class ValorantConfigApp(ctk.CTk):
                 self.tr("archivo_no_encontrado", "Configuration file not found.")
             )
 
+    def mostrar_popup_seguridad_win(self):
+        self.popup_win = ctk.CTkToplevel(self)
+        self.popup_win.title(self.tr("msg_exito_titulo")) # Título: "Éxito"
+        self.popup_win.geometry("450x220")
+        self.popup_win.attributes("-topmost", True)
+        self.popup_win.grab_set()
+
+        self.segundos = 15
+        
+        # Usamos un icono de check o algo visualmente positivo al inicio
+        lbl_msg = ctk.CTkLabel(
+            self.popup_win, 
+            text=self.tr("win_res_full_info").format(self.segundos),
+            wraplength=400,
+            font=("Segoe UI", 13),
+            justify="center"
+        )
+        lbl_msg.pack(pady=(30, 10), padx=20)
+
+        def tick():
+            if self.segundos > 0:
+                self.segundos -= 1
+                lbl_msg.configure(text=self.tr("win_res_msg").format(self.segundos))
+                self.timer_id = self.after(1000, tick)
+            else:
+                ejecutar_reversion()
+
+        def confirmar():
+            self.after_cancel(self.timer_id)
+            self.popup_win.destroy()
+
+        def ejecutar_reversion():
+            try: 
+                self.after_cancel(self.timer_id)
+            except: 
+                pass
+            
+            # 1. Revertimos SOLO Windows
+            self.cambiar_res_windows(self.old_win_x, self.old_win_y)
+            
+            # 2. Desmarcar el checkbox usando el nombre CORRECTO
+            # Cambiamos check_res_win por check_res_windows
+            if hasattr(self, 'check_res_windows'):
+                self.check_res_windows.deselect() 
+            
+            # 3. Cerrar la ventana
+            self.popup_win.destroy()
+
+        # Botones
+        frame_btns = ctk.CTkFrame(self.popup_win, fg_color="transparent")
+        frame_btns.pack(pady=10)
+
+        ctk.CTkButton(frame_btns, text=self.tr("btn_confirmar"), command=confirmar, width=120).pack(side="left", padx=10)
+        ctk.CTkButton(frame_btns, text=self.tr("btn_revertir_ahora"), command=ejecutar_reversion, fg_color="gray", width=120).pack(side="right", padx=10)
+
+        tick()
+
     def cambiar_res_windows(self, ancho, alto):
         """Cambia la resolución del escritorio de Windows con notificaciones visuales."""
         try:
@@ -1735,6 +1807,7 @@ class ValorantConfigApp(ctk.CTk):
             from tkinter import messagebox
             t = self.idiomas[self.lang]
 
+            # 1. Definición de la estructura
             class DEVMODE(ctypes.Structure):
                 _fields_ = [
                     ("dmDeviceName", ctypes.c_wchar * 32), ("dmSpecVersion", ctypes.c_ushort),
@@ -1756,7 +1829,12 @@ class ValorantConfigApp(ctk.CTk):
             dm = DEVMODE()
             dm.dmSize = ctypes.sizeof(DEVMODE)
 
+            # 2. CAPTURA: Antes de modificar 'dm', obtenemos la resolución ACTUAL
             if user32.EnumDisplaySettingsW(None, -1, ctypes.byref(dm)):
+                self.old_win_x = dm.dmPelsWidth  # Guardamos el punto de retorno
+                self.old_win_y = dm.dmPelsHeight
+
+                # 3. APLICACIÓN: Ahora sí, configuramos los nuevos valores
                 dm.dmPelsWidth = int(ancho)
                 dm.dmPelsHeight = int(alto)
                 dm.dmFields = 0x00080000 | 0x00100000
@@ -1768,10 +1846,9 @@ class ValorantConfigApp(ctk.CTk):
                     # Si falla, avisamos al usuario con una ventana
                     error_msg = f"Windows rejected {ancho}x{alto}. Code: {resultado}" if self.lang == "EN" else f"Windows rechazó {ancho}x{alto}. Código: {resultado}"
                     messagebox.showwarning(
-                        self.tr("msg_windows_display_titulo", "Windows Display"),
-                        error_msg
+                        self.tr("msg_windows_display_titulo", "Windows Display"), error_msg
                     )
-                # Nota: El mensaje de éxito ya se muestra en la función aplicar() consolidado.
+                return True # Cambio exitoso, podemos lanzar el popup         
                     
         except Exception as e:
             from tkinter import messagebox

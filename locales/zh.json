@@ -79,6 +79,16 @@
   "Shading": "着色质量",
   "GlobalIllumination": "全局光照",
   "Reflection": "反射质量",
+  
+  "win_res_title": "显示设置",
+  "win_res_msg": "要保留这些显示设置吗？将在 {} 秒后还原。",
+  "btn_confirmar": "保留更改",
+  "btn_revertir_ahora": "还原",
+  
+  "win_res_title": "显示设置",
+  "win_res_full_info": "✅ VALORANT 设置已成功应用！\n\nWindows 分辨率已同步。屏幕显示正常吗？如果未确认，将在 {} 秒后自动还原。",
+  "btn_confirmar": "是的，显示正常",
+  "btn_revertir_ahora": "还原 Windows",
 
   "opciones": [
     "1920x1440 (高 / 2K)",

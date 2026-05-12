@@ -80,6 +80,16 @@
   "GlobalIllumination": "Illumination globale",
   "Reflection": "Reflets",
 
+  "win_res_title": "Paramètres d'affichage",
+  "win_res_msg": "Conserver ces paramètres d'affichage ? Rétablissement dans {} secondes.",
+  "btn_confirmar": "Conserver les modifications",
+  "btn_revertir_ahora": "Rétablir",
+  
+  "win_res_title": "Paramètres d'affichage",
+  "win_res_full_info": "✅ Paramètres VALORANT appliqués avec succès !\n\nLa résolution Windows a été synchronisée. L'écran s'affiche-t-il correctement ? Il sera rétabli automatiquement dans {} secondes sans confirmation.",
+  "btn_confirmar": "Oui, c'est bon",
+  "btn_revertir_ahora": "Rétablir Windows",
+
   "opciones": [
     "1920x1440 (Haute / 2K)",
     "1600x1200 (Haute / Standard)",

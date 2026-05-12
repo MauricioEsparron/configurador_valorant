@@ -80,6 +80,16 @@
   "GlobalIllumination": "Globale Beleuchtung",
   "Reflection": "Reflexionen",
 
+  "win_res_title": "Anzeigeeinstellungen",
+  "win_res_msg": "Möchten Sie diese Auflösungseinstellungen beibehalten? In {} Sekunden wird alles rückgängig gemacht.",
+  "btn_confirmar": "Änderungen beibehalten",
+  "btn_revertir_ahora": "Rückgängig machen",
+  
+  "win_res_title": "Anzeigeeinstellungen",
+  "win_res_full_info": "✅ VALORANT-Einstellungen erfolgreich angewendet!\n\nDie Windows-Auflösung wurde synchronisiert. Sieht der Bildschirm korrekt aus? In {} Sekunden wird sie automatisch zurückgesetzt, wenn Sie nicht bestätigen.",
+  "btn_confirmar": "Ja, sieht gut aus",
+  "btn_revertir_ahora": "Windows zurücksetzen",
+
   "opciones": [
     "1920x1440 (Hoch / 2K)",
     "1600x1200 (Hoch / Standard)",

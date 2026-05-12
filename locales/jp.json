@@ -79,6 +79,16 @@
   "Shading": "シェーディング",
   "GlobalIllumination": "グローバルイルミネーション",
   "Reflection": "リフレクション",
+  
+  "win_res_title": "ディスプレイの設定",
+  "win_res_msg": "これらのディスプレイ設定を維持しますか？ {}秒後に元に戻ります。",
+  "btn_confirmar": "変更を維持する",
+  "btn_revertir_ahora": "元に戻す",
+  
+  "win_res_title": "ディスプレイの設定",
+  "win_res_full_info": "✅ VALORANTの設定が正常に適用されました！\n\nWindowsの解像度が同期されました。画面は正しく表示されていますか？確認がない場合、{}秒後に自動的に元に戻ります。",
+  "btn_confirmar": "はい、問題ありません",
+  "btn_revertir_ahora": "元に戻す",
 
   "opciones": [
     "1920x1440 (高画質 / 2K)",

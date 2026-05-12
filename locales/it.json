@@ -79,6 +79,16 @@
   "Shading": "Ombreggiatura",
   "GlobalIllumination": "Illuminazione Globale",
   "Reflection": "Riflessi",
+  
+  "win_res_title": "Impostazioni dello schermo",
+  "win_res_msg": "Vuoi mantenere queste impostazioni dello schermo? Ripristino tra {} secondi.",
+  "btn_confirmar": "Mantieni modifiche",
+  "btn_revertir_ahora": "Ripristina",
+  
+  "win_res_title": "Impostazioni dello schermo",
+  "win_res_full_info": "✅ Impostazioni VALORANT applicate con successo!\n\nLa risoluzione di Windows è stata sincronizzata. Lo schermo si vede correttamente? Verrà ripristinata automaticamente tra {} secondi se non confermi.",
+  "btn_confirmar": "Sì, va bene",
+  "btn_revertir_ahora": "Ripristina Windows",
 
   "opciones": [
     "1920x1440 (Alta / 2K)",
