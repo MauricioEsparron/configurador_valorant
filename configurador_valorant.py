@@ -578,25 +578,38 @@ class ValorantConfigApp(ctk.CTk):
             self.combo_cuentas.set(lista[0])
 
     def extraer_id_real(self, texto_combo):
-        """Extrae el ID real reconociendo el nuevo separador '|' o el antiguo '()'."""
-        # 1. Caso Formato Nuevo: "ALIAS  |  id: 7491434d-..."
+        """Extrae el ID real reconociendo formatos nuevos y antiguos."""
+        
+        if not texto_combo:
+            return ""
+
+        # Caso formato moderno: cualquier variante de "| id:"
+        if "| id:" in texto_combo:
+            return texto_combo.split("| id:")[-1].strip()
+
+        if "|  id:" in texto_combo:
+            return texto_combo.split("|  id:")[-1].strip()
+
+        if "| id: " in texto_combo:
+            return texto_combo.split("| id: ")[-1].strip()
+
         if " |  id: " in texto_combo:
             return texto_combo.split(" |  id: ")[-1].strip()
 
-        # 2. Caso Formato Viejo: "ALIAS (7491434d...)"
+        # Caso viejo: Alias (UUID...)
         if "(" in texto_combo and ")" in texto_combo:
             try:
-                # Extraemos lo que hay entre paréntesis
                 id_parcial = texto_combo.split("(")[-1].split("...")[0].replace(")", "").strip()
-                # Buscamos en el Super JSON cuál coincide
+
                 perfiles = self.cargar_alias()
                 for folder_id in perfiles.keys():
                     if folder_id.startswith(id_parcial):
                         return folder_id
             except:
                 pass
-    # 3. Si no hay separadores, el texto ya es el ID puro
-        return texto_combo
+
+        # Si ya es ID puro
+        return texto_combo.strip()
 
     def toggle_ultra_fps(self):
         import configparser
