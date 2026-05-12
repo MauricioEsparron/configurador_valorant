@@ -83,7 +83,6 @@ class ValorantConfigApp(ctk.CTk):
         self.title("VALORANT Stretched Res Configurator")
         self.geometry("595x695")
         self.resizable(False, False)
-        
         # Icono de la ventana
         icon_path = resource_path("gato.ico")
         if os.path.exists(icon_path):
@@ -1043,13 +1042,29 @@ class ValorantConfigApp(ctk.CTk):
             height=28,
             state="readonly",
             command=self.cambiar_de_cuenta_manual,
-            fg_color="#1a1a1a",
-            border_color="#4ade80",
-            button_color="#4ade80",
-            text_color="#4ade80",
+            fg_color="#1a1a1a",          # Fondo principal
+            border_color="#4ade80",      # Borde verde
+
+            button_color="#22c55e",      # Flecha más visible
+            button_hover_color="#16a34a",# Hover más oscuro
+
+            text_color="#4ade80",        # Texto
             dropdown_text_color="#4ade80",
+            dropdown_fg_color="#111827", # Fondo dropdown oscuro
             font=("Segoe UI", 11) # Fuente un poco más pequeña ayuda a que quepa más texto
         )
+        # Bloquear escritura en el combobox
+        self.combo_cuentas._entry.bind("<Key>", lambda e: "break")
+        # Bloquear selección/clic dentro del texto
+        self.combo_cuentas._entry.bind("<Button-1>", lambda e: "break")
+        self.combo_cuentas._entry.bind("<B1-Motion>", lambda e: "break")
+        self.combo_cuentas._entry.bind("<Double-Button-1>", lambda e: "break")
+        # Quitar cursor de texto (I-beam)
+        self.combo_cuentas._entry.configure(cursor="arrow")
+        # Evitar foco visual
+        self.combo_cuentas._entry.bind("<FocusIn>", lambda e: self.focus())
+        # Bloquear selección por teclado
+        self.combo_cuentas._entry.bind("<<Selection>>", lambda e: "break")
         # El sticky="we" hará que se adapte al ancho del contenedor
         self.combo_cuentas.grid(row=0, column=1, sticky="we", padx=(0, 5))
 
@@ -1121,8 +1136,30 @@ class ValorantConfigApp(ctk.CTk):
         self.label_sug = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
         self.label_sug.pack(pady=(10, 5))
 
-        # ComboBox de resoluciones (el que ya tenías)
-        self.combo_res = ctk.CTkComboBox(self, width=350, state="readonly", command=self.on_combo_change)
+        self.combo_res = ctk.CTkComboBox(
+        self,
+        width=350,
+        state="readonly",
+        command=self.on_combo_change
+    )
+
+        # Bloquear escritura
+        self.combo_res._entry.bind("<Key>", lambda e: "break")
+
+        # Bloquear clic dentro del campo (evita selección y cursor de texto)
+        self.combo_res._entry.bind("<Button-1>", lambda e: "break")
+        self.combo_res._entry.bind("<B1-Motion>", lambda e: "break")
+        self.combo_res._entry.bind("<Double-Button-1>", lambda e: "break")
+
+        # Quitar cursor tipo texto (I-beam)
+        self.combo_res._entry.configure(cursor="arrow")
+
+        # Evitar foco visual (quita el palito de escritura)
+        self.combo_res._entry.bind("<FocusIn>", lambda e: self.focus())
+
+        # Opcional: deshabilitar selección por teclado (Ctrl+A, Shift, etc.)
+        self.combo_res._entry.bind("<<Selection>>", lambda e: "break")
+
         self.combo_res.pack(pady=10)
 
         # Slider
