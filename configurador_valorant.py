@@ -150,8 +150,6 @@ class ValorantConfigApp(ctk.CTk):
         # 5. Creamos acceso directo (si no existe)
         self.crear_acceso_directo_inicio()
 
-    # --- LÍNEA PARA EL REFRESCO ---
-    #    self.bind("<FocusIn>", lambda e: self.leer_datos_actuales())
     # --- LÍNEA PARA EL ESTADO INICIAL ---
         self.actualizar_estado_interfaz()
 
@@ -170,72 +168,72 @@ class ValorantConfigApp(ctk.CTk):
 
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
 
-        # import json
-
-        # onboarding_completado = False
-
-        # # Leer primero desde archivo semilla (fuente absoluta)
-        # if not onboarding_prev:
-        #     self.withdraw()
-        #     self.after(100, self.mostrar_modal_bienvenida_tyc)
-
             # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
 
     def mostrar_modal_bienvenida_tyc(self):
-        """Fase 1: Ventana modal que obliga a aceptar los términos o cerrar la app."""
-        self.ventana_bienvenida = ctk.CTkToplevel(self)
-        self.ventana_bienvenida.title(self.tr("titulo_bienvenida", "Bienvenido"))
-        self.ventana_bienvenida.geometry("450x200")
-        self.ventana_bienvenida.resizable(False, False)
-        self.ventana_bienvenida.grab_set()
-        self.ventana_bienvenida.attributes("-topmost", True)
-        
-        # Función interna para limpiar archivos residuales si decide no aceptar
-        def cancelar_y_limpiar():
-            try:
-                # Si se alcanzó a crear la carpeta temporal 'data' al iniciar, la borramos
-                if os.path.exists(self.folder_data):
-                    import shutil
-                    shutil.rmtree(self.folder_data)
-            except Exception:
-                pass
-            self.quit()
+            """Fase 1: Ventana modal con un cuadro de texto legal completo (Scrollable) 
+            que obliga a aceptar los términos para poder continuar."""
+            self.ventana_bienvenida = ctk.CTkToplevel(self)
+            self.ventana_bienvenida.title(self.tr("titulo_terminos", "Términos y Condiciones"))
+            self.ventana_bienvenida.geometry("500x450") # Ajustamos el tamaño al layout original
+            self.ventana_bienvenida.resizable(False, False)
+            self.ventana_bienvenida.grab_set()
+            self.ventana_bienvenida.attributes("-topmost", True)
+            
+            # Función interna para limpiar archivos si decide no aceptar (Anti-bypass)
+            def cancelar_y_limpiar():
+                try:
+                    if os.path.exists(self.folder_data):
+                        import shutil
+                        shutil.rmtree(self.folder_data)
+                except Exception:
+                    pass
+                self.quit()
 
-        self.ventana_bienvenida.protocol("WM_DELETE_WINDOW", cancelar_y_limpiar)
-        
-        lbl_mensaje = ctk.CTkLabel(
-            self.ventana_bienvenida, 
-            text=self.tr("msg_onboarding_tyc", "Al usar esta aplicación, aceptas los términos y condiciones de uso."),
-            font=("Segoe UI", 13, "bold"),
-            wraplength=380,
-            justify="center"
-        )
-        lbl_mensaje.pack(pady=(40, 20), padx=20)
-        
-        frame_botones = ctk.CTkFrame(self.ventana_bienvenida, fg_color="transparent")
-        frame_botones.pack(pady=10)
-        
-        btn_cancelar = ctk.CTkButton(
-            frame_botones, 
-            text=self.tr("btn_cancelar", "Cancelar"), 
-            fg_color="#343a40", 
-            hover_color="#23272b",
-            width=120,
-            command=cancelar_y_limpiar
-        )
-        btn_cancelar.pack(side="left", padx=15)
-        
-        btn_aceptar = ctk.CTkButton(
-            frame_botones, 
-            text=self.tr("btn_aceptar", "Aceptar"), 
-            fg_color="#ff4655", 
-            hover_color="#b8323d",
-            width=120,
-            command=self.onboarding_aceptar_terminos
-        )
-        btn_aceptar.pack(side="left", padx=15)
+            # Si cierran desde la 'X' de Windows, se limpia y se apaga la app
+            self.ventana_bienvenida.protocol("WM_DELETE_WINDOW", cancelar_y_limpiar)
+            
+            # 1. TEXTBOX CON SCROLL DINÁMICO (Estilo original heredado)
+            txt_legal = ctk.CTkTextbox(
+                self.ventana_bienvenida, 
+                width=460, 
+                height=320, # Espacio ideal para que quepan los botones abajo sin apretarse
+                wrap="word", 
+                font=("Segoe UI", 11)
+            )
+            txt_legal.pack(padx=20, pady=(20, 10))
+            
+            # Insertar tu texto legal de i18n e impedir que lo editen
+            txt_legal.insert("0.0", self.tr("texto_legal", "Al usar esta aplicación, aceptas los términos y condiciones de uso."))
+            txt_legal.configure(state="disabled")
+            
+            # 2. FRAME PARA LOS BOTONES DE ACCIÓN (Horizontal)
+            frame_botones = ctk.CTkFrame(self.ventana_bienvenida, fg_color="transparent")
+            frame_botones.pack(pady=(5, 15))
+            
+            # Botón Cancelar (Apaga la app)
+            btn_cancelar = ctk.CTkButton(
+                frame_botones, 
+                text=self.tr("btn_cancelar", "Cancelar"), 
+                fg_color="#343a40", 
+                hover_color="#23272b",
+                width=140,
+                command=cancelar_y_limpiar
+            )
+            btn_cancelar.pack(side="left", padx=15)
+            
+            # Botón Aceptar (Pasa a la fase de almacenamiento)
+            btn_aceptar = ctk.CTkButton(
+                frame_botones, 
+                text=self.tr("btn_aceptar", "Aceptar"), 
+                fg_color="#ff4655", # Rojo Valorant institucional
+                hover_color="#b8323d",
+                width=140,
+                command=self.onboarding_aceptar_terminos
+            )
+            btn_aceptar.pack(side="left", padx=15)  
 
     def onboarding_aceptar_terminos(self):
         """Transición: Cierra bienvenida y pasa a la configuración de almacenamiento."""
@@ -561,12 +559,7 @@ class ValorantConfigApp(ctk.CTk):
 
         self.btn_cambiar_ruta = ctk.CTkButton(tab_alm, command=cambiar_ruta_interna)
         self.btn_cambiar_ruta.pack(pady=20)
-
-        # 3. CONTENIDO PESTAÑA: APARIENCIA
-        # name_apa = self.tabview_adj.tab(name_alm)
-        # self.lbl_titulo_ruta = ctk.CTkLabel(tab_alm, text="", font=("Arial", 12, "bold"))
-        # self.lbl_titulo_ruta.pack(pady=20)
-        
+     
         # 4. CONTENIDO PESTAÑA: ACERCA DE (About)
         tab_abo = self.tabview_adj.tab(name_abo)
         
