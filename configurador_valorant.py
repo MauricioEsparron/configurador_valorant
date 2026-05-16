@@ -281,7 +281,7 @@ class ValorantConfigApp(ctk.CTk):
             
             ctk.CTkLabel(
                 self.ventana_onboarding_alm, 
-                text=self.tr("lbl_titulo_ruta", "Selecciona la ruta de almacenamiento para los datos:"), 
+                text=self.tr("lbl_titulo_ruta", "Select the storage path for the data:"), 
                 font=("Segoe UI", 12, "bold")
             ).pack(pady=(25, 5))
             
@@ -344,7 +344,7 @@ class ValorantConfigApp(ctk.CTk):
             # 2. EL BOTÓN DE FINALIZACIÓN (Confirmar)
             btn_finalizar = ctk.CTkButton(
                 self.ventana_onboarding_alm, 
-                text=self.tr("btn_finalizar", "Finalizar"), 
+                text=self.tr("btn_finalizar", "Save"), 
                 fg_color="#2ea44f", 
                 hover_color="#22863a",
                 width=140,
