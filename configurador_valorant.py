@@ -469,6 +469,18 @@ class ValorantConfigApp(ctk.CTk):
                                         command=self.mostrar_qr_binance) # <--- CAMBIO AQUÍ
         self.btn_otros.pack(side="left", padx=5)    
 
+        self.lbl_lnk_terminos = ctk.CTkLabel(
+            tab_abo, 
+            text=t.get("lnk_terminos", "Términos y condiciones"), 
+            font=("Segoe UI", 11, "bold", "underline"),
+            text_color="#369fc9", # Azul clásico interactivo
+            cursor="hand2"
+        )
+        self.lbl_lnk_terminos.pack(pady=(20, 0))
+        
+        # Evento de clic para abrir la ventana modal de TyC
+        self.lbl_lnk_terminos.bind("<Button-1>", lambda event: self.abrir_ventana_terminos())
+
     def mostrar_qr_binance(self):
         """Abre una ventana emergente con el código QR de Binance."""
         from PIL import Image
@@ -505,6 +517,34 @@ class ValorantConfigApp(ctk.CTk):
         ctk.CTkButton(vent_qr, text=self.tr("btn_cerrar", "Close"), 
                     command=vent_qr.destroy).pack(pady=(0, 20))
 
+    def abrir_ventana_terminos(self):
+        """Abre una subventana emergente y centrada con los Términos y Condiciones."""
+        ventana_tyc = ctk.CTkToplevel(self)
+        ventana_tyc.title(self.idiomas[self.lang].get("titulo_terminos", "Términos y Condiciones"))
+        ventana_tyc.geometry("500://450") # Tamaño adecuado para el texto largo
+        ventana_tyc.resizable(False, False)
+        ventana_tyc.grab_set()
+        ventana_tyc.attributes("-topmost", True)
+        
+        t = self.idiomas[self.lang]
+        
+        # TextBox con scroll dinámico para que el texto legal quepa perfectamente
+        txt_legal = ctk.CTkTextbox(ventana_tyc, width=460, height=340, wrap="word", font=("Segoe UI", 11))
+        txt_legal.pack(padx=20, pady=(20, 10))
+        
+        # Insertar texto e impedir su edición
+        txt_legal.insert("0.0", t.get("texto_legal", ""))
+        txt_legal.configure(state="disabled")
+        
+        # Botón de cierre
+        btn_cerrar = ctk.CTkButton(
+            ventana_tyc, 
+            text=t.get("btn_cerrar", "Cerrar"), 
+            command=ventana_tyc.destroy,
+            fg_color="#ff4655", # Color rojo institucional de Valorant
+            hover_color="#b8323d"
+        )
+        btn_cerrar.pack(pady=(0, 15))
 
     def retranslate_ajustes(self):
         """Actualiza los textos de la ventana de ajustes."""
@@ -1335,7 +1375,30 @@ class ValorantConfigApp(ctk.CTk):
             "btn_cancelar": "Cancel",
             "btn_cerrar": "Close",
             "ultra_fps_titulo": "Ultra FPS Options",
-
+            "lnk_terminos": "Terms and conditions",
+                "titulo_terminos": "Terms and Conditions of Use",
+                "btn_cerrar": "Close",
+                "texto_legal": (
+                    "TERMS AND CONDITIONS OF USE\n"
+                    "Last updated: 05/11/26\n\n"
+                    "By downloading, installing or using VAL-ConfigPro, you agree to comply with and be bound by the following terms and conditions. If you do not agree to these terms, do not use the Software.\n\n"
+                    "1. Nature of the Service\n"
+                    "The Software is an independent technical customization tool designed to optimize and adjust local configuration files (.ini) and the operating system display resolution.\n\n"
+                    "2. Third-Party Disclaimer\n"
+                    "VAL-ConfigPro is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Riot Games, VALORANT, or any of its subsidiaries or affiliates.\n\n"
+                    "The name \"VALORANT\", as well as related names, marks, emblems and images are registered trademarks of their respective owners.\n\n"
+                    "The use of this software is at the user's own risk. The developer is not responsible for any sanctions, account suspensions (bans) or restrictions imposed by third parties derived from the use of this tool.\n\n"
+                    "3. User Responsibility\n"
+                    "The user is solely responsible for:\n"
+                    "- Ensuring that the use of the Software does not violate the Terms of Service of the games they decide to optimize.\n"
+                    "- Checking the compatibility of display resolutions with their monitor. The developer is not responsible for hardware damage or operating system misconfigurations.\n\n"
+                    "4. Intellectual Property\n"
+                    "All code, design, and logic of the Software are the exclusive property of Mauricio Ramirez Esparron. Reverse engineering, decompilation, or unauthorized redistribution of the binary without explicit written permission is prohibited.\n\n"
+                    "5. Limitation of Liability\n"
+                    "To the maximum extent permitted by law, the developer shall not be liable for any direct, indirect, incidental, or special damages arising out of the use or inability to use the Software, including but not limited to loss of data or system interruption.\n\n"
+                    "6. Modifications\n"
+                    "The developer reserves the right to modify these terms at any time. Continued use of the Software following any changes constitutes acceptance of the new terms."
+                ),
             # =========================
             # RESOLUTION OPTIONS
             # =========================
