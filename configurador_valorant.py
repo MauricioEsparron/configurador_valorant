@@ -37,8 +37,8 @@ class ValorantConfigApp(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+        self.after(200, lambda: self.iconbitmap(resource_path("gato.ico")))
         import json
-
         # 1. El "Ancla"
         self.archivo_semilla = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app_launcher.json")
 
@@ -111,10 +111,6 @@ class ValorantConfigApp(ctk.CTk):
         self.title("VALORANT Stretched Res Configurator")
         self.geometry("595x695")
         self.resizable(False, False)
-        # Icono de la ventana
-        icon_path = resource_path("gato.ico")
-        if os.path.exists(icon_path):
-            self.wm_iconbitmap(icon_path)
 
         # Cargar iconos sociales
         try:
@@ -153,6 +149,7 @@ class ValorantConfigApp(ctk.CTk):
     # --- LÍNEA PARA EL ESTADO INICIAL ---
         self.actualizar_estado_interfaz()
 
+        self.deiconify()
         # Configuración de backup FPS
         self.archivo_cache_fps = ""
         if self.ruta_ini:
@@ -172,16 +169,35 @@ class ValorantConfigApp(ctk.CTk):
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
 
+    def aplicar_icono(self, ventana):
+        try:
+            ruta_icono = resource_path("gato.ico")
+
+            ventana.update_idletasks()
+
+            def set_icon():
+                try:
+                    if ventana.winfo_exists():
+                        ventana.iconbitmap(ruta_icono)
+                except Exception as e:
+                    print("ICON ERROR:", e)
+
+            ventana.after(200, set_icon)
+
+        except Exception as e:
+            print("Error aplicando icono:", e)
+
     def mostrar_modal_bienvenida_tyc(self):
         """Fase 1: Ventana modal con un cuadro de texto legal completo (Scrollable) 
         y un Checkbox obligatorio para activar el botón de continuar."""
         self.ventana_bienvenida = ctk.CTkToplevel(self)
+        self.aplicar_icono(self.ventana_bienvenida)
         self.ventana_bienvenida.title(self.tr("titulo_terminos", "Términos y Condiciones"))
         self.ventana_bienvenida.geometry("500x480") # Añadimos 30px de altura para el Checkbox
         self.ventana_bienvenida.resizable(False, False)
         self.ventana_bienvenida.grab_set()
         self.ventana_bienvenida.attributes("-topmost", True)
-        
+
         # Función interna para limpiar archivos si decide no aceptar (Anti-bypass)
         def cancelar_y_limpiar():
             try:
@@ -271,6 +287,7 @@ class ValorantConfigApp(ctk.CTk):
     def mostrar_modal_almacenamiento_inicial(self):
             """Fase 2: Ventana obligatoria para elegir la ruta de datos en la primera ejecución."""
             self.ventana_onboarding_alm = ctk.CTkToplevel(self)
+            self.aplicar_icono(self.ventana_onboarding_alm)
             self.ventana_onboarding_alm.title(self.tr("tab_storage", "Almacenamiento"))
             self.ventana_onboarding_alm.geometry("500x280")
             self.ventana_onboarding_alm.resizable(False, False)
@@ -467,6 +484,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # 1. Creamos una ventana de nivel superior (Popup)
         self.ventana_input = ctk.CTkToplevel(self)
+        self.aplicar_icono(self.ventana_bienvenida)
         self.ventana_input.title(self.tr("personalizar_cuenta_titulo", "Personalize Account"))
         self.ventana_input.geometry("550x230")
         self.ventana_input.resizable(False, False)
@@ -532,6 +550,7 @@ class ValorantConfigApp(ctk.CTk):
     def abrir_ajustes_globales(self):
         """Ventana de ajustes con pestañas para una mejor organización."""
         self.ventana_adj = ctk.CTkToplevel(self)
+        self.aplicar_icono(self.ventana_adj)
         self.ventana_adj.geometry("550x380")
         self.ventana_adj.resizable(False, False)
         self.ventana_adj.grab_set()
@@ -661,6 +680,7 @@ class ValorantConfigApp(ctk.CTk):
         
         # 1. Crear la ventana popup
         vent_qr = ctk.CTkToplevel(self)
+        self.aplicar_icono(vent_qr)
         vent_qr.title(self.tr("donar_crypto", "Donate with Crypto"))
         vent_qr.geometry("400x600") # Un poco más alto para que quepa el botón abajo
         vent_qr.resizable(False, False)
@@ -693,6 +713,7 @@ class ValorantConfigApp(ctk.CTk):
     def abrir_ventana_terminos(self):
         """Abre una subventana emergente y centrada con los Términos y Condiciones."""
         ventana_tyc = ctk.CTkToplevel(self)
+        self.aplicar_icono(ventana_tyc)
         ventana_tyc.title(self.idiomas[self.lang].get("titulo_terminos", "Términos y Condiciones"))
         ventana_tyc.geometry("500://450") # Tamaño adecuado para el texto largo
         ventana_tyc.resizable(False, False)
@@ -894,6 +915,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # --- Crear ventana secundaria modal ---
         self.popup = ctk.CTkToplevel(self)
+        self.aplicar_icono(self.popup)
         self.popup.title(self.tr("ultra_fps_titulo", "Ultra FPS Options"))
         self.popup.geometry("450x580")
         self.popup.resizable(False, False)
@@ -2025,6 +2047,7 @@ class ValorantConfigApp(ctk.CTk):
 
     def mostrar_popup_seguridad_win(self):
         self.popup_win = ctk.CTkToplevel(self)
+        self.aplicar_icono(self.popup)
         self.popup_win.title(self.tr("msg_exito_titulo")) # Título: "Éxito"
         self.popup_win.geometry("450x220")
         self.popup_win.attributes("-topmost", True)
