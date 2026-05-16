@@ -173,67 +173,94 @@ class ValorantConfigApp(ctk.CTk):
         return P == "" or P.isdigit()
 
     def mostrar_modal_bienvenida_tyc(self):
-            """Fase 1: Ventana modal con un cuadro de texto legal completo (Scrollable) 
-            que obliga a aceptar los términos para poder continuar."""
-            self.ventana_bienvenida = ctk.CTkToplevel(self)
-            self.ventana_bienvenida.title(self.tr("titulo_terminos", "Términos y Condiciones"))
-            self.ventana_bienvenida.geometry("500x450") # Ajustamos el tamaño al layout original
-            self.ventana_bienvenida.resizable(False, False)
-            self.ventana_bienvenida.grab_set()
-            self.ventana_bienvenida.attributes("-topmost", True)
-            
-            # Función interna para limpiar archivos si decide no aceptar (Anti-bypass)
-            def cancelar_y_limpiar():
-                try:
-                    if os.path.exists(self.folder_data):
-                        import shutil
-                        shutil.rmtree(self.folder_data)
-                except Exception:
-                    pass
-                self.quit()
+        """Fase 1: Ventana modal con un cuadro de texto legal completo (Scrollable) 
+        y un Checkbox obligatorio para activar el botón de continuar."""
+        self.ventana_bienvenida = ctk.CTkToplevel(self)
+        self.ventana_bienvenida.title(self.tr("titulo_terminos", "Términos y Condiciones"))
+        self.ventana_bienvenida.geometry("500x480") # Añadimos 30px de altura para el Checkbox
+        self.ventana_bienvenida.resizable(False, False)
+        self.ventana_bienvenida.grab_set()
+        self.ventana_bienvenida.attributes("-topmost", True)
+        
+        # Función interna para limpiar archivos si decide no aceptar (Anti-bypass)
+        def cancelar_y_limpiar():
+            try:
+                if os.path.exists(self.folder_data):
+                    import shutil
+                    shutil.rmtree(self.folder_data)
+            except Exception:
+                pass
+            self.quit()
 
-            # Si cierran desde la 'X' de Windows, se limpia y se apaga la app
-            self.ventana_bienvenida.protocol("WM_DELETE_WINDOW", cancelar_y_limpiar)
+        # Si cierran desde la 'X' de Windows, se limpia y se apaga la app
+        self.ventana_bienvenida.protocol("WM_DELETE_WINDOW", cancelar_y_limpiar)
+        
+        # 1. TEXTBOX CON SCROLL DINÁMICO
+        txt_legal = ctk.CTkTextbox(
+            self.ventana_bienvenida, 
+            width=460, 
+            height=290, # Reducimos un pelín la altura para dar espacio al Checkbox
+            wrap="word", 
+            font=("Segoe UI", 11)
+        )
+        txt_legal.pack(padx=20, pady=(20, 10))
+        
+        # Insertar tu texto legal de i18n e impedir que lo editen
+        txt_legal.insert("0.0", self.tr("texto_legal", "TERMS AND CONDITIONS OF USE\nLast updated: 05/11/26\n\nBy downloading, installing, or using VAL-ConfigPro (hereinafter referred to as \"the Software\"), you agree to comply with and be bound by the following terms and conditions. If you do not agree to these terms, do not use the Software.\n\n1. Nature of the Service\nThe Software is an independent technical customization tool designed to optimize and adjust local configuration files (.ini) and the operating system's screen resolution.\n\n2. Third-Party Disclaimer\nVAL-ConfigPro is not officially affiliated, associated, authorized, endorsed, or in any way connected with Riot Games, VALORANT, or any of their subsidiaries or affiliates.\n\nThe name \"VALORANT\", as well as related trademarks and logos, are registered trademarks of their respective owners.\n\nUse of this software is at the user's own risk. The developer is not responsible for any third-party sanctions, account suspensions (bans), or restrictions resulting from the use of this tool.\n\n3. User Responsibility\nThe user is solely responsible for:\n- Ensuring that the use of the Software does not violate the Terms of Service of the games they choose to optimize.\n- Verifying the compatibility of screen resolutions with their monitor. The developer is not responsible for hardware damage or operating system misconfigurations.\n\n4. Intellectual Property\nAll code, design, and logic of the Software are the exclusive property of Mauricio Ramirez Esparron. Reverse engineering, decompilation, or unauthorized redistribution of the binary without explicit written permission is prohibited.\n\n5. Limitation of Liability\nTo the maximum extent permitted by law, the developer shall not be liable for any direct, indirect, incidental, or special damages arising out of the use or inability to use the Software, including but not limited to data loss or system interruption.\n\n6. Modifications\nThe developer reserves the right to modify these terms at any time. Continued use of the Software following any changes constitutes acceptance of the new terms."))
+        txt_legal.configure(state="disabled")
+        
+        # --- LÓGICA DE CONTROL DEL BOTÓN ACEPTAR ---
+        def evaluar_checkbox():
+            # Si el checkbox está marcado ("1"), habilitamos el botón, de lo contrario lo deshabilitamos
+            if chk_estado.get() == "1":
+                btn_aceptar.configure(state="normal", fg_color="#ff4655", hover_color="#b8323d")
+            else:
+                btn_aceptar.configure(state="disabled", fg_color="#555555")
+
+       # 2. CHECKBOX DE CONFIRMACIÓN MÁS PEQUEÑO
+        chk_estado = ctk.StringVar(value="0") # Inicia desmarcado
+        chk_terminos = ctk.CTkCheckBox(
+            self.ventana_bienvenida,
+            text=self.tr("chk_aceptar_terminos", "I have read and accept the terms and conditions."),
+            variable=chk_estado,
+            onvalue="1",
+            offvalue="0",
+            command=evaluar_checkbox, # Ejecuta la validación en cada clic
             
-            # 1. TEXTBOX CON SCROLL DINÁMICO (Estilo original heredado)
-            txt_legal = ctk.CTkTextbox(
-                self.ventana_bienvenida, 
-                width=460, 
-                height=320, # Espacio ideal para que quepan los botones abajo sin apretarse
-                wrap="word", 
-                font=("Segoe UI", 11)
-            )
-            txt_legal.pack(padx=20, pady=(20, 10))
-            
-            # Insertar tu texto legal de i18n e impedir que lo editen
-            txt_legal.insert("0.0", self.tr("texto_legal", "Al usar esta aplicación, aceptas los términos y condiciones de uso."))
-            txt_legal.configure(state="disabled")
-            
-            # 2. FRAME PARA LOS BOTONES DE ACCIÓN (Horizontal)
-            frame_botones = ctk.CTkFrame(self.ventana_bienvenida, fg_color="transparent")
-            frame_botones.pack(pady=(5, 15))
-            
-            # Botón Cancelar (Apaga la app)
-            btn_cancelar = ctk.CTkButton(
-                frame_botones, 
-                text=self.tr("btn_cancelar", "Cancelar"), 
-                fg_color="#343a40", 
-                hover_color="#23272b",
-                width=140,
-                command=cancelar_y_limpiar
-            )
-            btn_cancelar.pack(side="left", padx=15)
-            
-            # Botón Aceptar (Pasa a la fase de almacenamiento)
-            btn_aceptar = ctk.CTkButton(
-                frame_botones, 
-                text=self.tr("btn_aceptar", "Aceptar"), 
-                fg_color="#ff4655", # Rojo Valorant institucional
-                hover_color="#b8323d",
-                width=140,
-                command=self.onboarding_aceptar_terminos
-            )
-            btn_aceptar.pack(side="left", padx=15)  
+            # --- AJUSTES DE TAMAÑO ---
+            checkbox_width=18,       # Reduce el ancho del cuadro del check
+            checkbox_height=18,      # Reduce el alto del cuadro del check
+            border_width=2,          # Hace el borde un poquito más fino si lo deseas
+            font=("Segoe UI", 11),   # Fuente un punto más pequeña para que armonice
+            text_color="#8b949e"     # Color gris secundario para un look más elegante
+        )
+        chk_terminos.pack(padx=20, pady=(5, 10), anchor="w") # Alineado a la izquierda
+        
+        # 3. FRAME PARA LOS BOTONES DE ACCIÓN
+        frame_botones = ctk.CTkFrame(self.ventana_bienvenida, fg_color="transparent")
+        frame_botones.pack(pady=(5, 15))
+        
+        # Botón Cancelar (Apaga la app)
+        btn_cancelar = ctk.CTkButton(
+            frame_botones, 
+            text=self.tr("btn_cancelar", "Cancel"), 
+            fg_color="#343a40", 
+            hover_color="#23272b",
+            width=140,
+            command=cancelar_y_limpiar
+        )
+        btn_cancelar.pack(side="left", padx=15)
+        
+        # Botón Aceptar (Inicia "disabled" y de color gris)
+        btn_aceptar = ctk.CTkButton(
+            frame_botones, 
+            text=self.tr("btn_aceptar", "Accept"), 
+            fg_color="#555555", 
+            state="disabled", # Bloqueado al arrancar
+            width=140,
+            command=self.onboarding_aceptar_terminos
+        )
+        btn_aceptar.pack(side="left", padx=15)
 
     def onboarding_aceptar_terminos(self):
         """Transición: Cierra bienvenida y pasa a la configuración de almacenamiento."""
@@ -1535,29 +1562,10 @@ class ValorantConfigApp(ctk.CTk):
             "btn_cerrar": "Close",
             "ultra_fps_titulo": "Ultra FPS Options",
             "lnk_terminos": "Terms and conditions",
-                "titulo_terminos": "Terms and Conditions of Use",
-                "btn_cerrar": "Close",
-                "texto_legal": (
-                    "TERMS AND CONDITIONS OF USE\n"
-                    "Last updated: 05/11/26\n\n"
-                    "By downloading, installing or using VAL-ConfigPro, you agree to comply with and be bound by the following terms and conditions. If you do not agree to these terms, do not use the Software.\n\n"
-                    "1. Nature of the Service\n"
-                    "The Software is an independent technical customization tool designed to optimize and adjust local configuration files (.ini) and the operating system display resolution.\n\n"
-                    "2. Third-Party Disclaimer\n"
-                    "VAL-ConfigPro is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Riot Games, VALORANT, or any of its subsidiaries or affiliates.\n\n"
-                    "The name \"VALORANT\", as well as related names, marks, emblems and images are registered trademarks of their respective owners.\n\n"
-                    "The use of this software is at the user's own risk. The developer is not responsible for any sanctions, account suspensions (bans) or restrictions imposed by third parties derived from the use of this tool.\n\n"
-                    "3. User Responsibility\n"
-                    "The user is solely responsible for:\n"
-                    "- Ensuring that the use of the Software does not violate the Terms of Service of the games they decide to optimize.\n"
-                    "- Checking the compatibility of display resolutions with their monitor. The developer is not responsible for hardware damage or operating system misconfigurations.\n\n"
-                    "4. Intellectual Property\n"
-                    "All code, design, and logic of the Software are the exclusive property of Mauricio Ramirez Esparron. Reverse engineering, decompilation, or unauthorized redistribution of the binary without explicit written permission is prohibited.\n\n"
-                    "5. Limitation of Liability\n"
-                    "To the maximum extent permitted by law, the developer shall not be liable for any direct, indirect, incidental, or special damages arising out of the use or inability to use the Software, including but not limited to loss of data or system interruption.\n\n"
-                    "6. Modifications\n"
-                    "The developer reserves the right to modify these terms at any time. Continued use of the Software following any changes constitutes acceptance of the new terms."
-                ),
+            "titulo_terminos": "Terms and Conditions of Use",
+            "btn_cerrar": "Close",
+            "texto_legal": "TERMS AND CONDITIONS OF USE\nLast updated: 05/11/26\n\nBy downloading, installing, or using VAL-ConfigPro (hereinafter referred to as \"the Software\"), you agree to comply with and be bound by the following terms and conditions. If you do not agree to these terms, do not use the Software.\n\n1. Nature of the Service\nThe Software is an independent technical customization tool designed to optimize and adjust local configuration files (.ini) and the operating system's screen resolution.\n\n2. Third-Party Disclaimer\nVAL-ConfigPro is not officially affiliated, associated, authorized, endorsed, or in any way connected with Riot Games, VALORANT, or any of their subsidiaries or affiliates.\n\nThe name \"VALORANT\", as well as related trademarks and logos, are registered trademarks of their respective owners.\n\nUse of this software is at the user's own risk. The developer is not responsible for any third-party sanctions, account suspensions (bans), or restrictions resulting from the use of this tool.\n\n3. User Responsibility\nThe user is solely responsible for:\n- Ensuring that the use of the Software does not violate the Terms of Service of the games they choose to optimize.\n- Verifying the compatibility of screen resolutions with their monitor. The developer is not responsible for hardware damage or operating system misconfigurations.\n\n4. Intellectual Property\nAll code, design, and logic of the Software are the exclusive property of Mauricio Ramirez Esparron. Reverse engineering, decompilation, or unauthorized redistribution of the binary without explicit written permission is prohibited.\n\n5. Limitation of Liability\nTo the maximum extent permitted by law, the developer shall not be liable for any direct, indirect, incidental, or special damages arising out of the use or inability to use the Software, including but not limited to data loss or system interruption.\n\n6. Modifications\nThe developer reserves the right to modify these terms at any time. Continued use of the Software following any changes constitutes acceptance of the new terms.",
+            "chk_aceptar_terminos": "I have read and accept the terms and conditions.",
             # =========================
             # RESOLUTION OPTIONS
             # =========================
