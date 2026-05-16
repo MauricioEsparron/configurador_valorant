@@ -36,32 +36,60 @@ class ValorantConfigApp(ctk.CTk):
             return self.idiomas.get(self.lang, {}).get(clave, fallback)
 
     def __init__(self):
-        super().__init__()   
-        
-        # 1. El "Ancla": Este archivo siempre vive al lado del exe
-        self.archivo_semilla = os.path.join(os.path.abspath("."), "app_launcher.json")
-        
-        # 2. Obtener ruta de carpeta de datos (Semilla o Defecto)
-        self.folder_data = self.obtener_ruta_datos_inicial()
-        
-        # 3. Rutas MASTER
-        self.ruta_perfiles = os.path.join(self.folder_data, "profiles.json") # EL SUPER JSON
-        self.folder_backups = os.path.join(self.folder_data, "backups")
-        
-        # 4. Asegurar que existan las carpetas
-        os.makedirs(self.folder_backups, exist_ok=True)
+        super().__init__()
+        import json
 
-        # 5. MIGRACIÓN Y CARGA
-        self.datos_pro = self.cargar_y_migrar_datos()
-        
-        # Resolución 3D
+        # 1. El "Ancla"
+        self.archivo_semilla = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app_launcher.json")
+
+        # Ruta por defecto
+        self.default_data_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+        # Estado inicial
+        onboarding_prev = False
+        self.folder_data = self.default_data_folder
+
+        # 2. Leer semilla si existe
+        if os.path.exists(self.archivo_semilla):
+            try:
+                with open(self.archivo_semilla, "r", encoding="utf-8") as f:
+                    seed = json.load(f)
+
+                self.folder_data = seed.get("data_path", self.default_data_folder)
+
+                onboarding_prev = seed.get(
+                    "onboarding_completed",
+                    os.path.exists(os.path.join(self.folder_data, "profiles.json"))
+                )
+
+            except:
+                pass
+
+        # 3. Rutas reales
+        self.ruta_perfiles = os.path.join(self.folder_data, "profiles.json")
+        self.folder_backups = os.path.join(self.folder_data, "backups")
+
+        # 4. Crear estructura solo si onboarding ya existe
+        if onboarding_prev:
+            os.makedirs(self.folder_data, exist_ok=True)
+            os.makedirs(self.folder_backups, exist_ok=True)
+
+        # 5. Cargar datos
+        self.datos_pro = self.cargar_y_migrar_datos(crear_archivos=onboarding_prev)
+
+        # Resolución
         self.valor_3d_inicial = self.datos_pro.get("config_global", {}).get("res_3d_default", 100)
 
+        # Idioma
         self.lang = self.datos_pro.get("config_global", {}).get("language", "en")
 
-        # Diccionario cache
+        # Cache
         self.idiomas = {}
 
+        # 6. Mostrar onboarding si corresponde
+        if not onboarding_prev:
+            self.withdraw()
+            self.after(100, self.mostrar_modal_bienvenida_tyc)
         # Catálogo global de idiomas
         self.idiomas_disponibles = {
             "es": "Español",
@@ -141,6 +169,163 @@ class ValorantConfigApp(ctk.CTk):
         ]
 
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
+
+        # import json
+
+        # onboarding_completado = False
+
+        # # Leer primero desde archivo semilla (fuente absoluta)
+        # if not onboarding_prev:
+        #     self.withdraw()
+        #     self.after(100, self.mostrar_modal_bienvenida_tyc)
+
+            # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
+    def validar_numeros(self, P):
+        return P == "" or P.isdigit()
+
+    def mostrar_modal_bienvenida_tyc(self):
+        """Fase 1: Ventana modal que obliga a aceptar los términos o cerrar la app."""
+        self.ventana_bienvenida = ctk.CTkToplevel(self)
+        self.ventana_bienvenida.title(self.tr("titulo_bienvenida", "Bienvenido"))
+        self.ventana_bienvenida.geometry("450x200")
+        self.ventana_bienvenida.resizable(False, False)
+        self.ventana_bienvenida.grab_set()
+        self.ventana_bienvenida.attributes("-topmost", True)
+        
+        # Función interna para limpiar archivos residuales si decide no aceptar
+        def cancelar_y_limpiar():
+            try:
+                # Si se alcanzó a crear la carpeta temporal 'data' al iniciar, la borramos
+                if os.path.exists(self.folder_data):
+                    import shutil
+                    shutil.rmtree(self.folder_data)
+            except Exception:
+                pass
+            self.quit()
+
+        self.ventana_bienvenida.protocol("WM_DELETE_WINDOW", cancelar_y_limpiar)
+        
+        lbl_mensaje = ctk.CTkLabel(
+            self.ventana_bienvenida, 
+            text=self.tr("msg_onboarding_tyc", "Al usar esta aplicación, aceptas los términos y condiciones de uso."),
+            font=("Segoe UI", 13, "bold"),
+            wraplength=380,
+            justify="center"
+        )
+        lbl_mensaje.pack(pady=(40, 20), padx=20)
+        
+        frame_botones = ctk.CTkFrame(self.ventana_bienvenida, fg_color="transparent")
+        frame_botones.pack(pady=10)
+        
+        btn_cancelar = ctk.CTkButton(
+            frame_botones, 
+            text=self.tr("btn_cancelar", "Cancelar"), 
+            fg_color="#343a40", 
+            hover_color="#23272b",
+            width=120,
+            command=cancelar_y_limpiar
+        )
+        btn_cancelar.pack(side="left", padx=15)
+        
+        btn_aceptar = ctk.CTkButton(
+            frame_botones, 
+            text=self.tr("btn_aceptar", "Aceptar"), 
+            fg_color="#ff4655", 
+            hover_color="#b8323d",
+            width=120,
+            command=self.onboarding_aceptar_terminos
+        )
+        btn_aceptar.pack(side="left", padx=15)
+
+    def onboarding_aceptar_terminos(self):
+        """Transición: Cierra bienvenida y pasa a la configuración de almacenamiento."""
+        if hasattr(self, 'ventana_bienvenida') and self.ventana_bienvenida.winfo_exists():
+            self.ventana_bienvenida.destroy()
+        self.mostrar_modal_almacenamiento_inicial()
+
+    def mostrar_modal_almacenamiento_inicial(self):
+            """Fase 2: Ventana obligatoria para elegir la ruta de datos en la primera ejecución."""
+            self.ventana_onboarding_alm = ctk.CTkToplevel(self)
+            self.ventana_onboarding_alm.title(self.tr("tab_storage", "Almacenamiento"))
+            self.ventana_onboarding_alm.geometry("500x280")
+            self.ventana_onboarding_alm.resizable(False, False)
+            self.ventana_onboarding_alm.grab_set()
+            self.ventana_onboarding_alm.attributes("-topmost", True)
+            
+            self.ventana_onboarding_alm.protocol("WM_DELETE_WINDOW", self.quit)
+            
+            ctk.CTkLabel(
+                self.ventana_onboarding_alm, 
+                text=self.tr("lbl_titulo_ruta", "Selecciona la ruta de almacenamiento para los datos:"), 
+                font=("Segoe UI", 12, "bold")
+            ).pack(pady=(25, 5))
+            
+            self.lbl_ruta_onboarding = ctk.CTkLabel(
+                self.ventana_onboarding_alm, 
+                text=f"{self.folder_data}", 
+                wraplength=440,
+                text_color="#8b949e"
+            )
+            self.lbl_ruta_onboarding.pack(pady=10)
+            
+            # --- FUNCIÓN INTERNA PARA EXAMINAR RUTA ---
+            def examinar_ruta_inicial():
+                from tkinter import filedialog
+                nueva_ruta = filedialog.askdirectory()
+                if nueva_ruta:
+                    self.folder_data = nueva_ruta
+                    self.lbl_ruta_onboarding.configure(text=f"{nueva_ruta}")
+                    
+            # 1. EL BOTÓN QUE TE HABÍA BORRADO (Cambiar Ubicación)
+            btn_examinar = ctk.CTkButton(
+                self.ventana_onboarding_alm, 
+                text=self.tr("btn_cambiar_ruta", "Cambiar Ubicación"), 
+                fg_color="#343a40",
+                hover_color="#23272b",
+                width=140,
+                command=examinar_ruta_inicial
+            )
+            btn_examinar.pack(pady=10)
+            
+            # --- FUNCIÓN INTERNA PARA GUARDAR Y FINALIZAR ---
+            def finalizar_configuracion():
+                import json
+                
+                # Crear estructura física final en la ruta elegida
+                os.makedirs(self.folder_data, exist_ok=True)
+                self.ruta_perfiles = os.path.join(self.folder_data, "profiles.json")
+                self.folder_backups = os.path.join(self.folder_data, "backups")
+                os.makedirs(self.folder_backups, exist_ok=True)
+
+                # 1. Guardamos la ruta definitiva en el archivo semilla
+                with open(self.archivo_semilla, "w", encoding="utf-8") as f:
+                    json.dump({
+                        "data_path": self.folder_data,
+                        "onboarding_completed": True
+                    }, f, indent=4, ensure_ascii=False)
+                    
+                # 2. Guardamos en el diccionario de memoria de la app
+                self.guardar_en_super_json("config_global", None, "data_path", self.folder_data)
+                self.guardar_en_super_json("config_global", None, "onboarding_completed", True)
+                
+                # 3. Forzar escritura real del Super JSON por primera vez en su ruta correcta
+                with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
+                    json.dump(self.datos_pro, f, indent=4, ensure_ascii=False)
+                
+                # 4. Cerramos asistente y restauramos UI
+                self.ventana_onboarding_alm.destroy()
+                self.deiconify()
+
+            # 2. EL BOTÓN DE FINALIZACIÓN (Confirmar)
+            btn_finalizar = ctk.CTkButton(
+                self.ventana_onboarding_alm, 
+                text=self.tr("btn_finalizar", "Finalizar"), 
+                fg_color="#2ea44f", 
+                hover_color="#22863a",
+                width=140,
+                command=finalizar_configuracion
+            )
+            btn_finalizar.pack(pady=(5, 10))
 
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
@@ -906,9 +1091,8 @@ class ValorantConfigApp(ctk.CTk):
         # Si el archivo no existe, usamos la ruta por defecto al lado del exe
         return os.path.join(os.path.abspath("."), "data")
 
-    def cargar_y_migrar_datos(self):
+    def cargar_y_migrar_datos(self, crear_archivos=True):
         """Lee el Super JSON o migra archivos antiguos si es la primera vez."""
-        import json
         
         # Si ya existe el Super JSON, simplemente lo cargamos
         if os.path.exists(self.ruta_perfiles):
@@ -933,30 +1117,44 @@ class ValorantConfigApp(ctk.CTk):
                     for fid, alias in viejos_alias.items():
                         # Creamos la estructura por cuenta
                         nuevo_super_json["accounts"][fid] = {"alias": alias, "res_3d": 100}
-                os.remove(ruta_alias_vieja) # Borramos el viejo para limpiar
-            except: pass
+                # OJO: Solo borramos el archivo antiguo si el usuario ya está en su ruta final
+                if "onboarding_completed" in nuevo_super_json.get("config_global", {}):
+                    os.remove(ruta_alias_vieja)
+            except Exception: 
+                pass
 
-        # Guardamos el nuevo Super JSON
-        with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
-            json.dump(nuevo_super_json, f, indent=4)
+        # Guardamos el nuevo Super JSON SOLO si ya se completó onboarding
+        if crear_archivos:
+            os.makedirs(self.folder_data, exist_ok=True)
+            os.makedirs(self.folder_backups, exist_ok=True)
+
+            with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
+                json.dump(nuevo_super_json, f, indent=4, ensure_ascii=False)
             
         return nuevo_super_json
 
     def guardar_en_super_json(self, seccion, subseccion, clave, valor):
         """Guarda cualquier dato en el Super JSON y actualiza el archivo."""
+
+        # 🔥 ASEGURAR ESTRUCTURA FÍSICA ANTES DE ESCRIBIR
+        os.makedirs(self.folder_data, exist_ok=True)
+        os.makedirs(self.folder_backups, exist_ok=True)
+
         if seccion not in self.datos_pro:
             self.datos_pro[seccion] = {}
-            
+
         if subseccion:
             if subseccion not in self.datos_pro[seccion]:
                 self.datos_pro[seccion][subseccion] = {}
+
             self.datos_pro[seccion][subseccion][clave] = valor
         else:
             self.datos_pro[seccion][clave] = valor
 
         try:
             with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
-                json.dump(self.datos_pro, f, indent=4)
+                json.dump(self.datos_pro, f, indent=4, ensure_ascii=False)
+
         except Exception as e:
             print(f"Error al guardar Super JSON: {e}")
 
