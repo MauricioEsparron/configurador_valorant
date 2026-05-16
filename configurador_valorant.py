@@ -142,38 +142,6 @@ class ValorantConfigApp(ctk.CTk):
 
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
 
-    def cargar_y_migrar_datos(self):
-        """Unifica todos los archivos (.json, .txt) en el Super JSON profiles.json."""
-        if os.path.exists(self.ruta_perfiles):
-            try:
-                with open(self.ruta_perfiles, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except: pass
-
-        # Estructura base si el archivo no existe
-        nuevo_super_json = {
-            "config_global": {"res_3d_default": 100, "language": "EN"},
-            "accounts": {}
-        }
-
-        # --- MIGRACIÓN DE ALIAS ---
-        ruta_alias_v = os.path.join(self.folder_data, "account_names.json")
-        if os.path.exists(ruta_alias_v):
-            try:
-                with open(ruta_alias_v, "r", encoding="utf-8") as f:
-                    viejos = json.load(f)
-                    for fid, alias in viejos.items():
-                        nuevo_super_json["accounts"][fid] = {"alias": alias, "res_3d": 100}
-                os.remove(ruta_alias_v) # Limpieza
-            except: pass
-
-        # --- MIGRACIÓN DE RESOLUCIÓN 3D ---
-        # Si tienes archivos tipo pref_res_3d_ID.txt, podrías migrarlos aquí también
-        
-        with open(self.ruta_perfiles, "w", encoding="utf-8") as f:
-            json.dump(nuevo_super_json, f, indent=4)
-        return nuevo_super_json
-
     # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
