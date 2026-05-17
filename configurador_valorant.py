@@ -33,6 +33,23 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+class DEVMODE(ctypes.Structure):
+    _fields_ = [
+        ("dmDeviceName", ctypes.c_wchar * 32), ("dmSpecVersion", ctypes.c_ushort),
+        ("dmDriverVersion", ctypes.c_ushort), ("dmSize", ctypes.c_ushort),
+        ("dmDriverExtra", ctypes.c_ushort), ("dmFields", ctypes.c_uint),
+        ("dmOrientation", ctypes.c_short), ("dmPaperSize", ctypes.c_short),
+        ("dmPaperLength", ctypes.c_short), ("dmPaperWidth", ctypes.c_short),
+        ("dmScale", ctypes.c_short), ("dmCopies", ctypes.c_short),
+        ("dmDefaultSource", ctypes.c_short), ("dmPrintQuality", ctypes.c_short),
+        ("dmColor", ctypes.c_short), ("dmDuplex", ctypes.c_short),
+        ("dmYResolution", ctypes.c_short), ("dmTTOption", ctypes.c_short),
+        ("dmCollate", ctypes.c_short), ("dmFormName", ctypes.c_wchar * 32),
+        ("dmLogPixels", ctypes.c_ushort), ("dmBitsPerPel", ctypes.c_uint),
+        ("dmPelsWidth", ctypes.c_uint), ("dmPelsHeight", ctypes.c_uint),
+        ("dmDisplayFlags", ctypes.c_uint), ("dmDisplayFrequency", ctypes.c_uint),
+    ]
+
 class ValorantConfigApp(ctk.CTk):
 
     def tr(self, clave, fallback=""):
@@ -912,6 +929,85 @@ class ValorantConfigApp(ctk.CTk):
         # Si ya es ID puro
         return texto_combo.strip()
 
+    def obtener_hz_disponibles(self):
+        """Retorna lista de modos (índice, hz_display) del monitor principal."""
+        user32 = ctypes.windll.user32
+        modos = {}   # hz_real → índice de enumeración
+        i = 0
+        while True:
+            dm = DEVMODE()
+            dm.dmSize = ctypes.sizeof(DEVMODE)
+            dm.dmDriverExtra = 0
+            if not user32.EnumDisplaySettingsW(None, i, ctypes.byref(dm)):
+                break
+            hz = dm.dmDisplayFrequency
+            if hz > 30:
+                modos[hz] = i   # guardamos el índice para usarlo al aplicar
+            i += 1
+        return modos
+
+    def aplicar_hz_seleccionado(self, seleccion):
+        """Cambia el Hz del monitor principal y notifica al usuario."""
+        try:
+            hz = int(seleccion.replace("●", "").replace("Hz", "").strip())
+            user32 = ctypes.windll.user32
+
+            # 1. Leer modo actual completo
+            dm = DEVMODE()
+            dm.dmSize = ctypes.sizeof(DEVMODE)
+            dm.dmDriverExtra = 0
+            if not user32.EnumDisplaySettingsW(None, -1, ctypes.byref(dm)):
+                messagebox.showerror(
+                    self.tr("msg_error_titulo", "Error"),
+                    "No se pudo leer la configuración actual del monitor."
+                )
+                return
+
+            # 2. Buscar en los modos enumerados si existe exactamente
+            #    esa frecuencia con la resolución actual
+            modo_encontrado = None
+            i = 0
+            while True:
+                dm_test = DEVMODE()
+                dm_test.dmSize = ctypes.sizeof(DEVMODE)
+                dm_test.dmDriverExtra = 0
+                if not user32.EnumDisplaySettingsW(None, i, ctypes.byref(dm_test)):
+                    break
+                if (dm_test.dmDisplayFrequency == hz and
+                    dm_test.dmPelsWidth == dm.dmPelsWidth and
+                    dm_test.dmPelsHeight == dm.dmPelsHeight and
+                    dm_test.dmBitsPerPel == dm.dmBitsPerPel):
+                    modo_encontrado = dm_test
+                    break
+                i += 1
+
+            if not modo_encontrado:
+                messagebox.showwarning(
+                    self.tr("msg_windows_display_titulo", "Windows Display"),
+                    f"No se encontró un modo compatible para {hz} Hz "
+                    f"con la resolución actual ({dm.dmPelsWidth}x{dm.dmPelsHeight})."
+                )
+                return
+
+            # 3. Aplicar el modo encontrado (flag 0 = temporal como Windows lo hace)
+            resultado = user32.ChangeDisplaySettingsW(ctypes.byref(modo_encontrado), 0)
+
+            if resultado == 0:
+                messagebox.showinfo(
+                    self.tr("msg_exito_titulo", "Success"),
+                    self.tr("hz_aplicado", "Refresh rate changed to {} Hz successfully.").format(hz)
+                )
+            else:
+                messagebox.showwarning(
+                    self.tr("msg_windows_display_titulo", "Windows Display"),
+                    f"Windows rechazó el cambio. Código: {resultado}"
+                )
+
+        except Exception as e:
+            messagebox.showerror(
+                self.tr("msg_error_titulo", "Error"),
+                self.tr("system_error", "Error: {}").format(str(e))
+            )
     def toggle_ultra_fps(self):
         import configparser
         import tkinter.messagebox as messagebox
@@ -1441,7 +1537,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # --- AQUÍ ESTÁ EL CAMBIO PARA QUE ESTÉN A LA PAR ---
         self.frame_check_horizontal = ctk.CTkFrame(self.frame_extra_win, fg_color="transparent")
-        self.frame_check_horizontal.pack(expand=True) # Centra verticalmente en el bloque
+        self.frame_check_horizontal.pack(expand=True, anchor="n", pady=(11, 0))
 
         self.check_res_windows = ctk.CTkCheckBox(
             self.frame_check_horizontal, 
@@ -1454,11 +1550,49 @@ class ValorantConfigApp(ctk.CTk):
 
         self.btn_help_res = ctk.CTkButton(
             self.frame_check_horizontal, 
-            text="?", width=18, height=18, corner_radius=9, 
+            text="?", width=14, height=14, corner_radius=8, 
             fg_color="#334155", 
             command=lambda: self.mostrar_ayuda("res_win")
         )
-        self.btn_help_res.pack(side="left", padx=(5, 0)) # Botón "?" justo al lado
+        self.btn_help_res.pack(side="left", padx=(4, 0)) # Botón "?" justo al lado
+
+        self.frame_hz = ctk.CTkFrame(self.frame_extra_win, fg_color="transparent")
+        self.frame_hz.pack(pady=(8, 0))
+
+        # Obtener modos: dict {hz_int: indice_enumeracion}
+        self.modos_hz = self.obtener_hz_disponibles()
+        hz_ordenados = sorted(self.modos_hz.keys(), reverse=True)
+
+        # Pre-seleccionar Hz activo para marcarlo con ">"
+        hz_activo = 0
+        try:
+            dm_actual = DEVMODE()
+            dm_actual.dmSize = ctypes.sizeof(DEVMODE)
+            dm_actual.dmDriverExtra = 0
+            if ctypes.windll.user32.EnumDisplaySettingsW(None, -1, ctypes.byref(dm_actual)):
+                hz_activo = dm_actual.dmDisplayFrequency
+        except Exception as e:
+            print(f"[WARN] Hz actual: {e}")
+
+        # Construir labels con marcador visual en el activo
+        hz_labels = [f"{hz} Hz" for hz in hz_ordenados]
+
+        self.combo_hz = ctk.CTkComboBox(
+            self.frame_hz,
+            values=hz_labels if hz_labels else ["60 Hz"],
+            width=130,
+            state="readonly",
+            command=self.aplicar_hz_seleccionado  # ← conectado
+        )
+
+        # Mostrar el activo seleccionado al iniciar
+        label_activo = f"{hz_activo} Hz"
+        if label_activo in hz_labels:
+            self.combo_hz.set(label_activo)
+        elif hz_labels:
+            self.combo_hz.set(hz_labels[0])
+
+        self.combo_hz.pack(side="left")
 
         self.label_sug = ctk.CTkLabel(self, text="", font=("Segoe UI", 14, "bold"))
         self.label_sug.pack(pady=(10, 5))
@@ -2162,29 +2296,61 @@ class ValorantConfigApp(ctk.CTk):
 
         tick()
 
+    def aplicar_hz_seleccionado(self, seleccion):
+        """Aplica el Hz usando el modo enumerado exacto del driver."""
+        try:
+            hz = int(seleccion.replace("Hz", "").strip())
+            user32 = ctypes.windll.user32
+
+            indice = self.modos_hz.get(hz)
+            if indice is None:
+                messagebox.showwarning(
+                    self.tr("msg_windows_display_titulo", "Windows Display"),
+                    f"No se encontró el modo {hz} Hz."
+                )
+                return
+
+            dm = DEVMODE()
+            dm.dmSize = ctypes.sizeof(DEVMODE)
+            dm.dmDriverExtra = 0
+            if not user32.EnumDisplaySettingsW(None, indice, ctypes.byref(dm)):
+                messagebox.showerror(self.tr("msg_error_titulo", "Error"), "No se pudo cargar el modo.")
+                return
+
+            # Feedback visual antes del negro
+            self.combo_hz.configure(state="disabled")
+            self.combo_hz.set(self.tr("lbl_hz_aplicando", "Applying..."))
+            self.update()
+
+            # Flag 0 — versión que sí aplicaba el cambio
+            resultado = user32.ChangeDisplaySettingsW(ctypes.byref(dm), 0)
+
+            self.combo_hz.configure(state="readonly")
+            self.combo_hz.set(f"{hz} Hz")
+
+            if resultado == 0:
+                messagebox.showinfo(
+                    self.tr("msg_exito_titulo", "Success"),
+                    self.tr("hz_aplicado", "Refresh rate changed to {} Hz successfully.").format(hz)
+                )
+            else:
+                messagebox.showwarning(
+                    self.tr("msg_windows_display_titulo", "Windows Display"),
+                    f"Windows rechazó el cambio a {hz} Hz. Código: {resultado}"
+                )
+
+        except Exception as e:
+            self.combo_hz.configure(state="readonly")
+            messagebox.showerror(
+                self.tr("msg_error_titulo", "Error"),
+                self.tr("system_error", "Error: {}").format(str(e))
+            )
+
     def cambiar_res_windows(self, ancho, alto):
         """Cambia la resolución del escritorio de Windows con notificaciones visuales."""
         try:
             import ctypes
             t = self.idiomas[self.lang]
-
-            # 1. Definición de la estructura
-            class DEVMODE(ctypes.Structure):
-                _fields_ = [
-                    ("dmDeviceName", ctypes.c_wchar * 32), ("dmSpecVersion", ctypes.c_ushort),
-                    ("dmDriverVersion", ctypes.c_ushort), ("dmSize", ctypes.c_ushort),
-                    ("dmDriverExtra", ctypes.c_ushort), ("dmFields", ctypes.c_uint),
-                    ("dmOrientation", ctypes.c_short), ("dmPaperSize", ctypes.c_short),
-                    ("dmPaperLength", ctypes.c_short), ("dmPaperWidth", ctypes.c_short),
-                    ("dmScale", ctypes.c_short), ("dmCopies", ctypes.c_short),
-                    ("dmDefaultSource", ctypes.c_short), ("dmPrintQuality", ctypes.c_short),
-                    ("dmColor", ctypes.c_short), ("dmDuplex", ctypes.c_short),
-                    ("dmYResolution", ctypes.c_short), ("dmTTOption", ctypes.c_short),
-                    ("dmCollate", ctypes.c_short), ("dmFormName", ctypes.c_wchar * 32),
-                    ("dmLogPixels", ctypes.c_ushort), ("dmBitsPerPel", ctypes.c_uint),
-                    ("dmPelsWidth", ctypes.c_uint), ("dmPelsHeight", ctypes.c_uint),
-                    ("dmDisplayFlags", ctypes.c_uint), ("dmDisplayFrequency", ctypes.c_uint),
-                ]
 
             user32 = ctypes.windll.user32
             dm = DEVMODE()
