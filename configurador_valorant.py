@@ -58,7 +58,7 @@ class ValorantConfigApp(ctk.CTk):
         super().__init__()
         self.tray_icon_activo = False
         self.after(200, lambda: self.iconbitmap(resource_path("gato.ico")))
-        import json
+
         # 1. El "Ancla"
         self.archivo_semilla = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app_launcher.json")
 
@@ -128,7 +128,7 @@ class ValorantConfigApp(ctk.CTk):
         self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)
 
         # --- CONFIGURACIÓN DE VENTANA ---
-        self.title("VALORANT Stretched Res Configurator")
+        self.title("VAL-Stretched-Res-Configurator")
         self.geometry("595x695")
         self.resizable(False, False)
 
@@ -139,16 +139,7 @@ class ValorantConfigApp(ctk.CTk):
             self.img_stream = ctk.CTkImage(light_image=Image.open(resource_path("streamlabs.png")), size=(28, 28))
             self.img_refresh = ctk.CTkImage(light_image=Image.open(resource_path("refresh.png")), size=(20, 18))
         except:
-            self.img_github = self.img_coffee = self.img_stream = None
-
-        # --- DICCIONARIOS DE IDIOMAS COMPLETOS ---
-        self.idiomas = {}
-        
-        # 1. Cargamos el código del idioma desde el Super JSON
-        self.lang = self.datos_pro.get("config_global", {}).get("language", "ES")
-        
-        # 2. Cargamos dinámicamente el archivo JSON correspondiente
-        self.idiomas[self.lang] = self.cargar_idioma_dinamico(self.lang)            
+            self.img_github = self.img_coffee = self.img_stream = None         
         
          # 1. Primero creamos la interfaz
         self.setup_ui() 
@@ -186,10 +177,6 @@ class ValorantConfigApp(ctk.CTk):
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
 
         self.protocol("WM_DELETE_WINDOW", self.minimizar_a_tray)
-
-            # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
-    def validar_numeros(self, P):
-        return P == "" or P.isdigit()
 
     def aplicar_icono(self, ventana):
         try:
@@ -416,7 +403,6 @@ class ValorantConfigApp(ctk.CTk):
             
             # --- FUNCIÓN INTERNA PARA GUARDAR Y FINALIZAR ---
             def finalizar_configuracion():
-                import json
                 
                 # Crear estructura física final en la ruta elegida
                 os.makedirs(self.folder_data, exist_ok=True)
@@ -511,7 +497,6 @@ class ValorantConfigApp(ctk.CTk):
 
     def cambiar_de_cuenta_manual(self, cuenta_seleccionada):
         """Versión 1.3: Cambia de cuenta y carga TODO desde el Super JSON."""
-        import os
         
         # 1. Extraemos el ID real (Manejando Alias)
         id_real = self.extraer_id_real(cuenta_seleccionada)
@@ -569,7 +554,7 @@ class ValorantConfigApp(ctk.CTk):
 
         # 1. Creamos una ventana de nivel superior (Popup)
         self.ventana_input = ctk.CTkToplevel(self)
-        self.aplicar_icono(self.ventana_bienvenida)
+        self.aplicar_icono(self.ventana_input)
         self.ventana_input.title(self.tr("personalizar_cuenta_titulo", "Personalize Account"))
         self.ventana_input.geometry("550x230")
         self.ventana_input.resizable(False, False)
@@ -701,9 +686,9 @@ class ValorantConfigApp(ctk.CTk):
 
         # 4. CONFIGURACIÓN DE IDIOMAS Y BOTONES
         self.diccionario_global_idiomas = {
-            "ES": "Español", "EN": "English", "FR": "Français", "DE": "Deutsch",
-            "IT": "Italiano", "PT": "Português", "RU": "Pусский", "JP": "日本語",
-            "KO": "한국어", "ZH": "中文"
+            "es": "Español", "en": "English", "fr": "Français", "de": "Deutsch",
+            "it": "Italiano", "pt": "Português", "ru": "Pусский", "jp": "日本語",
+            "ko": "한국어", "zh": "中文"
         }
         
         self.botones_idiomas = {}
@@ -714,7 +699,6 @@ class ValorantConfigApp(ctk.CTk):
 
         # Botón de GitHub
         def abrir_github():
-            import webbrowser
             webbrowser.open("https://github.com/MauricioEsparron/configurador_valorant/tree/main")
 
         self.btn_github = ctk.CTkButton(tab_abo, text="GitHub Repository", fg_color="#24292e", hover_color="#333", 
@@ -728,7 +712,6 @@ class ValorantConfigApp(ctk.CTk):
         frame_donaciones.pack(pady=5)
 
         def abrir_link(url):
-            import webbrowser
             webbrowser.open(url)
 
         # Opción 1: PayPal
@@ -761,7 +744,6 @@ class ValorantConfigApp(ctk.CTk):
     def mostrar_qr_binance(self):
         """Abre una ventana emergente con el código QR de Binance."""
         from PIL import Image
-        import os
         
         # 1. Crear la ventana popup
         vent_qr = ctk.CTkToplevel(self)
@@ -800,7 +782,7 @@ class ValorantConfigApp(ctk.CTk):
         ventana_tyc = ctk.CTkToplevel(self)
         self.aplicar_icono(ventana_tyc)
         ventana_tyc.title(self.idiomas[self.lang].get("titulo_terminos", "Términos y Condiciones"))
-        ventana_tyc.geometry("500://450") # Tamaño adecuado para el texto largo
+        ventana_tyc.geometry("500x450") # Tamaño adecuado para el texto largo
         ventana_tyc.resizable(False, False)
         ventana_tyc.grab_set()
         ventana_tyc.attributes("-topmost", True)
@@ -982,7 +964,7 @@ class ValorantConfigApp(ctk.CTk):
                 
                 # Mostramos el mensaje de confirmación
                 messagebox.showinfo(
-                    self.tr("msg_valorant_config_titulo", "VALORANT Config"),
+                    self.tr("msg_valorant_config_titulo", "VAL-Config"),
                     self.tr("valores_restaurados", "Original values have been successfully restored.")
                 )
 
@@ -1207,7 +1189,6 @@ class ValorantConfigApp(ctk.CTk):
 
     def obtener_ruta_datos_inicial(self):
         """Lee el archivo semilla para saber dónde está la carpeta data."""
-        import json
         if os.path.exists(self.archivo_semilla):
             try:
                 with open(self.archivo_semilla, "r") as f:
@@ -1576,7 +1557,7 @@ class ValorantConfigApp(ctk.CTk):
 
     def cargar_idioma_dinamico(self, codigo):
         """Busca el JSON de idioma. Si no existe, devuelve un backup básico."""
-        import json
+
         # Construimos la ruta: data/locales/es.json (por ejemplo)
         ruta = resource_path(os.path.join("locales", f"{codigo.lower()}.json"))
         
@@ -1822,15 +1803,14 @@ class ValorantConfigApp(ctk.CTk):
             # 1. Bloqueamos temporalmente el autorefresco
             self.bloqueo_en_progreso = True 
             
-            titulo = "Modo de Bloqueo" if self.lang == "ES" else "Lock Mode"
+            titulo = "Modo de Bloqueo" if self.lang == "en" else "Lock Mode"
             msg = ("Has seleccionado bloquear el archivo.\n\n"
                    "Este cambio se ejecutará físicamente cuando hagas clic en "
-                   "'APLICAR CONFIGURACIÓN'.") if self.lang == "ES" else (
+                   "'APLICAR CONFIGURACIÓN'.") if self.lang == "en" else (
                    "You have selected to lock the file.\n\n"
                    "This change will take effect physically when you click "
                    "'APPLY CONFIGURATION'.")
             
-            from tkinter import messagebox
             messagebox.showinfo(
                 titulo,
                 msg
@@ -1988,7 +1968,6 @@ class ValorantConfigApp(ctk.CTk):
             else:
                 mensaje_final = "La configuración ya estaba aplicada." if self.lang == "ES" else "Settings were already applied."
 
-            from tkinter import messagebox
             messagebox.showinfo(
                 self.tr("msg_valorant_titulo", "VALORANT"),
                 mensaje_final
@@ -1998,7 +1977,6 @@ class ValorantConfigApp(ctk.CTk):
             self.actualizar_estado_interfaz()
 
         except Exception as e:
-            from tkinter import messagebox
             messagebox.showerror(
                 self.tr("msg_error_titulo", "Error"),
                 str(e)
@@ -2019,7 +1997,6 @@ class ValorantConfigApp(ctk.CTk):
             titulo = t["res_win"]
             msg = t["help_res"]
         
-        from tkinter import messagebox
         messagebox.showinfo(
             titulo,
             msg
@@ -2112,8 +2089,6 @@ class ValorantConfigApp(ctk.CTk):
 
     def abrir_archivo_config(self, event=None):
         """Abre el archivo GameUserSettings.ini con el editor de texto predeterminado."""
-        import os
-        from tkinter import messagebox # <--- Asegura que esto esté aquí
         
         if hasattr(self, 'ruta_ini') and self.ruta_ini and os.path.exists(self.ruta_ini):
             try:
@@ -2124,7 +2099,6 @@ class ValorantConfigApp(ctk.CTk):
                     self.tr("error_abrir_archivo", "Could not open file: {}").format(e)
                 )
         else:
-            from tkinter import messagebox
             messagebox.showwarning(
                 self.tr("msg_aviso_titulo", "Warning"),
                 self.tr("archivo_no_encontrado", "Configuration file not found.")
@@ -2132,7 +2106,7 @@ class ValorantConfigApp(ctk.CTk):
 
     def mostrar_popup_seguridad_win(self):
         self.popup_win = ctk.CTkToplevel(self)
-        self.aplicar_icono(self.popup)
+        self.aplicar_icono(self.popup_win)
         self.popup_win.title(self.tr("msg_exito_titulo")) # Título: "Éxito"
         self.popup_win.geometry("450x220")
         self.popup_win.attributes("-topmost", True)
@@ -2192,7 +2166,6 @@ class ValorantConfigApp(ctk.CTk):
         """Cambia la resolución del escritorio de Windows con notificaciones visuales."""
         try:
             import ctypes
-            from tkinter import messagebox
             t = self.idiomas[self.lang]
 
             # 1. Definición de la estructura
@@ -2232,14 +2205,12 @@ class ValorantConfigApp(ctk.CTk):
                 
                 if resultado != 0:
                     # Si falla, avisamos al usuario con una ventana
-                    error_msg = f"Windows rejected {ancho}x{alto}. Code: {resultado}" if self.lang == "EN" else f"Windows rechazó {ancho}x{alto}. Código: {resultado}"
-                    messagebox.showwarning(
-                        self.tr("msg_windows_display_titulo", "Windows Display"), error_msg
-                    )
+                    error_msg = f"Windows rejected {ancho}x{alto}. Code: {resultado}" if self.lang == "en" else f"Windows rechazó {ancho}x{alto}. Código: {resultado}"
+                    messagebox.showwarning(self.tr("msg_windows_display_titulo", "Windows Display"), error_msg)
+                    return False
                 return True # Cambio exitoso, podemos lanzar el popup         
                     
         except Exception as e:
-            from tkinter import messagebox
             messagebox.showerror(
                 self.tr("msg_error_titulo", "Error"),
                 self.tr("system_error", "Error: {}").format(str(e))
