@@ -9,7 +9,11 @@ import sys
 import ctypes
 import json
 from PIL import Image, ImageTk
+import threading
+import pystray
 
+from pystray import MenuItem as item
+from PIL import Image
 
 # 1. IDENTIDAD DE APP (Para permitir anclado)
 try:
@@ -35,8 +39,24 @@ class ValorantConfigApp(ctk.CTk):
             """Obtiene una traducción segura según el idioma actual."""
             return self.idiomas.get(self.lang, {}).get(clave, fallback)
 
+    def _restaurar_ui(self):
+        self.deiconify()
+        self.after(100, self.lift)
+        self.after(150, lambda: self.attributes("-topmost", True))
+        self.after(300, lambda: self.attributes("-topmost", False))
+
+    def cerrar_desde_tray(self, icon=None, item=None):
+        try:
+            if hasattr(self, "tray_icon"):
+                self.tray_icon.stop()
+        except:
+            pass
+
+        self.destroy()    
+
     def __init__(self):
         super().__init__()
+        self.tray_icon_activo = False
         self.after(200, lambda: self.iconbitmap(resource_path("gato.ico")))
         import json
         # 1. El "Ancla"
@@ -165,6 +185,8 @@ class ValorantConfigApp(ctk.CTk):
 
         self.archivo_custom_fps = os.path.join(os.path.dirname(self.ruta_ini), "custom_fps_settings.json") if self.ruta_ini else ""
 
+        self.protocol("WM_DELETE_WINDOW", self.minimizar_a_tray)
+
             # --- LÓGICA DE VALIDACIÓN (SÓLO NÚMEROS) ---
     def validar_numeros(self, P):
         return P == "" or P.isdigit()
@@ -186,6 +208,69 @@ class ValorantConfigApp(ctk.CTk):
 
         except Exception as e:
             print("Error aplicando icono:", e)
+
+    def minimizar_a_tray(self):
+
+        self.withdraw()
+
+        if hasattr(self, "tray_icon_activo") and self.tray_icon_activo:
+            return
+
+        self.tray_icon_activo = True
+
+        image = Image.open(resource_path("gato.ico"))
+
+        menu = pystray.Menu(
+            pystray.MenuItem(
+                "Abrir",
+                self.restaurar_desde_tray,
+                default=True
+            ),
+            pystray.MenuItem(
+                "Salir",
+                self.salir_app
+            )
+        )
+
+        self.tray_icon = pystray.Icon(
+            "VALCONFIG",
+            image,
+            "VALORANT Configurator",
+            menu
+        )
+
+        threading.Thread(
+            target=self.tray_icon.run,
+            daemon=True
+        ).start()
+
+    def restaurar_desde_tray(self, icon=None, item=None):
+
+        self.deiconify()
+
+        self.after(0, self.lift)
+        self.after(0, self.focus_force)
+
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.stop()
+
+        self.tray_icon_activo = False
+
+
+    def salir_app(self, icon=None, item=None):
+
+        try:
+            if hasattr(self, "tray_icon"):
+                self.tray_icon.stop()
+        except:
+            pass
+
+        self.tray_icon_activo = False
+
+        self.withdraw()
+
+        self.after(50, self.quit)
+        self.after(100, self.destroy)
 
     def mostrar_modal_bienvenida_tyc(self):
         """Fase 1: Ventana modal con un cuadro de texto legal completo (Scrollable) 
@@ -294,7 +379,7 @@ class ValorantConfigApp(ctk.CTk):
             self.ventana_onboarding_alm.grab_set()
             self.ventana_onboarding_alm.attributes("-topmost", True)
             
-            self.ventana_onboarding_alm.protocol("WM_DELETE_WINDOW", self.quit)
+            self.ventana_onboarding_alm.protocol("WM_DELETE_WINDOW", self.destroy)
             
             ctk.CTkLabel(
                 self.ventana_onboarding_alm, 
